@@ -12,8 +12,8 @@ import type { SwarmTask } from "../types.js";
 
 // Chain endpoints
 const L1_RPC = process.env.L1_RPC ?? "http://localhost:18545";
-const L2_RPC = process.env.L2_RPC ?? "http://localhost:29547";
-const L3_RPC = process.env.L3_RPC ?? "http://localhost:39545";
+const L2_RPC = process.env.L2_RPC ?? "http://localhost:7260";
+const L3_RPC = process.env.L3_RPC ?? "http://localhost:7270";
 
 // Canonical bridge addresses
 const BRIDGES = {

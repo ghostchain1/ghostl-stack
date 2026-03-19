@@ -138,7 +138,7 @@ jobs:
         if: ${{ github.event.inputs.build_type != 'release' }}
         run: |
           flutter build apk --debug --target-platform android-arm64 \
-            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:39545' }} \
+            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:7270' }} \
             --dart-define=API_BASE_URL=${{ vars.LITVYB_API_URL || 'http://localhost:7001' }} \
             --dart-define=SOCKET_URL=${{ vars.LITVYB_SOCKET_URL || 'http://localhost:7001' }} \
             --dart-define=GHOSTBRAIN_URL=${{ vars.GHOSTBRAIN_URL || 'http://localhost:7002' }} \
@@ -148,7 +148,7 @@ jobs:
         if: ${{ github.event.inputs.build_type == 'release' || github.event_name != 'pull_request' }}
         run: |
           flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --split-per-abi \
-            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:39545' }} \
+            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:7270' }} \
             --dart-define=API_BASE_URL=${{ vars.LITVYB_API_URL || 'http://localhost:7001' }} \
             --dart-define=SOCKET_URL=${{ vars.LITVYB_SOCKET_URL || 'http://localhost:7001' }} \
             --dart-define=GHOSTBRAIN_URL=${{ vars.GHOSTBRAIN_URL || 'http://localhost:7002' }} \
@@ -158,7 +158,7 @@ jobs:
         if: ${{ github.event.inputs.build_type == 'release' || github.event_name == 'push' }}
         run: |
           flutter build appbundle --release \
-            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:39545' }} \
+            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:7270' }} \
             --dart-define=API_BASE_URL=${{ vars.LITVYB_API_URL || 'http://localhost:7001' }} \
             --dart-define=SOCKET_URL=${{ vars.LITVYB_SOCKET_URL || 'http://localhost:7001' }} \
             --dart-define=GHOSTBRAIN_URL=${{ vars.GHOSTBRAIN_URL || 'http://localhost:7002' }} \
@@ -243,7 +243,7 @@ jobs:
       - name: Build iOS (no codesign)
         run: |
           flutter build ios --release --no-codesign \
-            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:39545' }} \
+            --dart-define=GHOST_L3_RPC=${{ vars.GHOST_L3_RPC || 'http://localhost:7270' }} \
             --dart-define=API_BASE_URL=${{ vars.LITVYB_API_URL || 'http://localhost:7001' }} \
             --dart-define=SOCKET_URL=${{ vars.LITVYB_SOCKET_URL || 'http://localhost:7001' }} \
             --dart-define=GHOSTBRAIN_URL=${{ vars.GHOSTBRAIN_URL || 'http://localhost:7002' }} \

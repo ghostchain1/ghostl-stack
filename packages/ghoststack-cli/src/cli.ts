@@ -12,8 +12,8 @@
  *
  * Environment variables (all optional — defaults to localhost devnet):
  *   GHOST_L1_RPC           L1 RPC endpoint   (default: http://127.0.0.1:18545)
- *   GHOST_L2_RPC           L2 RPC endpoint   (default: http://127.0.0.1:29547)
- *   GHOST_L3_RPC           L3 RPC endpoint   (default: http://127.0.0.1:39545)
+ *   GHOST_L2_RPC           L2 RPC endpoint   (default: http://127.0.0.1:7260)
+ *   GHOST_L3_RPC           L3 RPC endpoint   (default: http://127.0.0.1:7270)
  *   DEPLOYER_URL           ghost-deployer    (default: http://127.0.0.1:7961)
  *   EVOLUTION_URL          ghost-evolution   (default: http://127.0.0.1:7962)
  *   SWARM_URL              ghostbrain-swarm  (default: http://127.0.0.1:7960)
@@ -30,8 +30,8 @@ const _filename = fileURLToPath(import.meta.url);
 const _dirname  = dirname(_filename);
 
 const GHOST_L1_RPC   = process.env.GHOST_L1_RPC   ?? "http://127.0.0.1:18545";
-const GHOST_L2_RPC   = process.env.GHOST_L2_RPC   ?? "http://127.0.0.1:29547";
-const GHOST_L3_RPC   = process.env.GHOST_L3_RPC   ?? "http://127.0.0.1:39545";
+const GHOST_L2_RPC   = process.env.GHOST_L2_RPC   ?? "http://127.0.0.1:7260";
+const GHOST_L3_RPC   = process.env.GHOST_L3_RPC   ?? "http://127.0.0.1:7270";
 const DEPLOYER_URL   = process.env.DEPLOYER_URL    ?? "http://127.0.0.1:7961";
 const EVOLUTION_URL  = process.env.EVOLUTION_URL   ?? "http://127.0.0.1:7962";
 const SWARM_URL      = process.env.SWARM_URL       ?? "http://127.0.0.1:7960";
@@ -166,8 +166,8 @@ async function cmdGenesis(args: string[]): Promise<void> {
     ...process.env,
     // Propagate chain RPC overrides from CLI env
     L1_RPC:          process.env["GHOST_L1_RPC"] ?? process.env["L1_RPC"] ?? "http://localhost:18545",
-    L2_RPC:          process.env["GHOST_L2_RPC"] ?? process.env["L2_RPC"] ?? "http://localhost:29547",
-    L3_RPC:          process.env["GHOST_L3_RPC"] ?? process.env["L3_RPC"] ?? "http://localhost:39545",
+    L2_RPC:          process.env["GHOST_L2_RPC"] ?? process.env["L2_RPC"] ?? "http://localhost:7260",
+    L3_RPC:          process.env["GHOST_L3_RPC"] ?? process.env["L3_RPC"] ?? "http://localhost:7270",
     GHOSTBRAIN_URL:  GHOSTBRAIN_URL,
     AI_SWARM_URL:    SWARM_URL,
     DEPLOYER_URL:    DEPLOYER_URL,

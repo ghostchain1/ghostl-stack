@@ -6,8 +6,8 @@ export type GhostMobileLayer = 'l1' | 'l2' | 'l3';
 
 export interface GhostMobileConfig {
   l1Rpc: string;    // http://localhost:18545
-  l2Rpc: string;    // http://localhost:29547
-  l3Rpc: string;    // http://localhost:39545
+  l2Rpc: string;    // http://localhost:7260
+  l3Rpc: string;    // http://localhost:7270
   walletApiUrl?: string; // GhostWallet mobile API
 }
 

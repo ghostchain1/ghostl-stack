@@ -1,0 +1,23 @@
+{
+  "name": "ghost-proof",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --loader ts-node/esm --no-warnings --experimental-specifier-resolution=node src/index.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "@ghostchain/ghost-sdk-core": "file:../../packages/ghost-sdk-core"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.2",
+    "ts-node": "^10.9.2",
+    "typescript": "5.6.3"
+  },
+  "engines": {
+    "node": ">=22.21.0 <23"
+  }
+}

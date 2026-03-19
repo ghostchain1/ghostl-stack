@@ -10,8 +10,8 @@ ghostbrain_url:         http://localhost:7900
 gais_url:               http://localhost:9100
 signing_relay_url:      http://localhost:7910
 l1_rpc_url:             http://localhost:18545
-l2_rpc_url:             http://localhost:29547
-l3_rpc_url:             http://localhost:39545
+l2_rpc_url:             http://localhost:7260
+l3_rpc_url:             http://localhost:7270
 cosmos_lcd_url:         http://localhost:1317
 prometheus_url:         http://localhost:9108
 

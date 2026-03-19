@@ -14,14 +14,14 @@ export const GhostNetworks = {
   L2: {
     name:    "ghostl2",
     chainId: 901,
-    rpc:     process.env.GHOST_L2_RPC ?? "http://localhost:29547",
+    rpc:     process.env.GHOST_L2_RPC ?? "http://localhost:7260",
     symbol:  "GST",
     explorer:"https://explorer.ghostchain.cloud?layer=2",
   },
   L3: {
     name:    "ghostl3",
     chainId: 903,
-    rpc:     process.env.GHOST_L3_RPC ?? "http://localhost:39545",
+    rpc:     process.env.GHOST_L3_RPC ?? "http://localhost:7270",
     symbol:  "GST",
     explorer:"https://explorer.ghostchain.cloud?layer=3",
   },

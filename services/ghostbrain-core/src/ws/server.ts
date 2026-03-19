@@ -16,6 +16,7 @@ import http        from "node:http";
 import { WebSocketServer } from "ws";
 import type { WebSocket }  from "ws";
 import { randomUUID }      from "node:crypto";
+import { decideGhostRoute, type GhostRouteDecision } from "../core/routeDecision.js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -45,16 +46,7 @@ interface SwarmNode {
   group:  string;
 }
 
-interface TxRouteDecision {
-  plan: {
-    path:              Layer[];
-    executeOn:         Layer;
-    requiresMessaging: boolean;
-    reason:            string;
-  };
-  riskScore: number;
-  notes?:    string[];
-}
+type TxRouteDecision = GhostRouteDecision;
 
 interface GhostBrainConfig {
   wsPath: string;
@@ -107,57 +99,6 @@ function enforceNoJump(path: Layer[]): void {
       throw new Error(`Policy jump blocked: ${path[i]} → ${path[i + 1]}`);
     }
   }
-}
-
-// ── Routing heuristic ─────────────────────────────────────────────────────────
-
-/** Selectors that indicate high-impact calls requiring tighter execution layer */
-const SUSPICIOUS_SELECTORS = new Set([
-  "0x095ea7b3", // approve
-  "0x23b872dd", // transferFrom
-  "0x3659cfe6", // upgradeTo
-  "0xf2fde38b", // transferOwnership
-]);
-
-function decideRoute(payload: Json): TxRouteDecision {
-  const from      = (payload.from     ?? "L3")    as Layer;
-  const intent    = (payload.intent   ?? "unknown") as string;
-  const selector  = (payload.selector ?? "0x")    as string;
-
-  const enforced  = cfg.policy.routingPath;
-  const startIdx  = enforced.indexOf(from);
-  const path: Layer[] = startIdx >= 0
-    ? (enforced.slice(startIdx) as Layer[])
-    : ["L3", "L2", "L1"];
-
-  let executeOn: Layer = from;
-  let riskScore        = 0.25;
-  const notes: string[] = [];
-
-  if (SUSPICIOUS_SELECTORS.has(selector.slice(0, 10))) {
-    executeOn  = from === "L3" ? "L2" : from;
-    riskScore  = 0.55;
-    notes.push("High-impact selector — preferred tighter execution layer.");
-  }
-
-  if (intent === "bridge") {
-    executeOn = from;
-    riskScore = Math.max(riskScore, 0.35);
-    notes.push("Bridge intent: messaging hops required.");
-  }
-
-  if (cfg.policy.enforceNoJump) enforceNoJump(path);
-
-  return {
-    plan: {
-      path,
-      executeOn,
-      requiresMessaging: path.length > 1,
-      reason:            "GhostBrain heuristic routing",
-    },
-    riskScore,
-    notes,
-  };
 }
 
 // ── Swarm coordination ────────────────────────────────────────────────────────
@@ -219,7 +160,7 @@ function handleConn(ws: WebSocket, req: http.IncomingMessage): void {
 
     try {
       if (topic === "ghost.route.decide") {
-        return reply(ws, ok(id, decideRoute(payload ?? {})));
+        return reply(ws, ok(id, decideGhostRoute((payload ?? {}) as Json, { routingPath: cfg.policy.routingPath })));
       }
       if (topic === "ghost.swarm.heartbeat") {
         const node   = (payload?.node as SwarmNode | undefined) ?? { nodeId: payload?.nodeId ?? "?", group: "default" };

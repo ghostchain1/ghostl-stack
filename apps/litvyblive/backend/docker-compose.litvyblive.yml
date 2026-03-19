@@ -2,7 +2,7 @@
 # Usage:  docker compose -f apps/litvyblive/backend/docker-compose.litvyblive.yml up -d
 # Env:    copy backend/config/.env.example to backend/config/.env and source it
 #
-# All platform transactions settle on GhostL3 (chain_id=903, RPC :39545)
+# All platform transactions settle on GhostL3 (chain_id=903, RPC :7270)
 # using GhostChain GST Token.
 
 name: litvyblive
@@ -11,7 +11,7 @@ x-common-env: &common-env
   JWT_SECRET: "${LITVYB_JWT_SECRET:-litvyblive-dev-secret}"
   DATA_DIR: /data
   REDIS_URL: "redis://redis:6379"
-  GHOST_L3_RPC: "${GHOST_L3_RPC:-http://host.docker.internal:39545}"
+  GHOST_L3_RPC: "${GHOST_L3_RPC:-http://host.docker.internal:7270}"
   GHOST_L3_CHAIN_ID: "903"
   CORS_ORIGIN: "${CORS_ORIGIN:-*}"
 

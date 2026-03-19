@@ -121,7 +121,7 @@
         "ADMIN_TOKEN": "${AI_MONITOR_ADMIN_TOKEN:-}",
         "GUARD_URL": "${GUARD_URL:-http://ghost-guard:7070}",
         "OBSERVE_ONLY": "${AI_MONITOR_OBSERVE_ONLY:-1}",
-        "RPC_L2": "http://l2-geth:8545"
+        "RPC_L2": "http://ghost-exec-l2:7260"
       },
       "healthcheck": {
         "interval": "20s",
@@ -579,8 +579,8 @@
         }
       },
       "environment": {
-        "RPC_L2": "http://l2-geth:8545",
-        "RPC_L3": "http://l3-geth:8545"
+        "RPC_L2": "http://ghost-exec-l2:7260",
+        "RPC_L3": "http://ghost-exec-l3:7270"
       },
       "healthcheck": {
         "interval": "20s",
@@ -642,8 +642,8 @@
       },
       "environment": {
         "PROM_URL": "${PROM_URL:-http://prometheus:9090}",
-        "RPC_L2": "http://l2-geth:8545",
-        "RPC_L3": "http://l3-geth:8545"
+        "RPC_L2": "http://ghost-exec-l2:7260",
+        "RPC_L3": "http://ghost-exec-l3:7270"
       },
       "healthcheck": {
         "interval": "20s",
@@ -1247,8 +1247,8 @@
       ],
       "command": [
         "op-batcher",
-        "--l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}",
-        "--l2-eth-rpc=http://l3-geth:8545",
+        "--l1-eth-rpc=${L3_L1_RPC:-http://ghost-exec-l2:7260}",
+        "--l2-eth-rpc=http://ghost-exec-l3:7270",
         "--rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
         "--private-key=${L3_BATCHER_KEY:-${BATCHER_KEY}}",
         "--data-availability-type=${L3_DA_TYPE:-calldata}",
@@ -1318,7 +1318,7 @@
       ],
       "command": [
         "op-node",
-        "--l1=${L3_L1_RPC:-http://l2-geth:8545}",
+        "--l1=${L3_L1_RPC:-http://ghost-exec-l2:7260}",
         "--l2=http://l3-geth:8551",
         "--l2.jwt-secret=/config/jwt.txt",
         "--rollup.config=/config/rollup.json",
@@ -1351,7 +1351,7 @@
         "start_period": "25s",
         "test": [
           "CMD-SHELL",
-          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"optimism_syncStatus\",\"params\":[]}' http://localhost:${L3_ROLLUP_RPC_PORT:-19546} >/dev/null"
+          "wget -qO- http://localhost:${L3_METRICS_NODE_PORT:-8300}/metrics >/dev/null"
         ],
         "timeout": "10s"
       },
@@ -1402,7 +1402,7 @@
       ],
       "command": [
         "op-proposer",
-        "--l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}",
+        "--l1-eth-rpc=${L3_L1_RPC:-http://ghost-exec-l2:7260}",
         "--rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
         "--game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}",
         "--proposal-interval=30s",
@@ -1493,8 +1493,8 @@
         "L2_TOKEN_ADDRESS": "${L2_TOKEN_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}",
         "L3_TOKEN_ADDRESS": "${L3_TOKEN_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}",
         "PROM_URL": "${PROM_URL:-http://prometheus:9090}",
-        "RPC_L2": "http://l2-geth:8545",
-        "RPC_L3": "http://l3-geth:8545"
+        "RPC_L2": "http://ghost-exec-l2:7260",
+        "RPC_L3": "http://ghost-exec-l3:7270"
       },
       "healthcheck": {
         "interval": "20s",
@@ -1644,8 +1644,8 @@
         }
       },
       "environment": {
-        "RPC_L2": "http://l2-geth:8545",
-        "RPC_L3": "http://l3-geth:8545"
+        "RPC_L2": "http://ghost-exec-l2:7260",
+        "RPC_L3": "http://ghost-exec-l3:7270"
       },
       "healthcheck": {
         "interval": "20s",
@@ -1884,8 +1884,8 @@
         }
       },
       "environment": {
-        "RPC_L2": "http://l2-geth:8545",
-        "RPC_L3": "http://l3-geth:8545"
+        "RPC_L2": "http://ghost-exec-l2:7260",
+        "RPC_L3": "http://ghost-exec-l3:7270"
       },
       "healthcheck": {
         "interval": "20s",
@@ -3199,7 +3199,7 @@
         "RATE_LIMIT_MAX": "${GUARD_RATE_LIMIT_MAX:-20}",
         "RATE_LIMIT_WINDOW_MS": "${GUARD_RATE_LIMIT_WINDOW_MS:-1000}",
         "RISK_WINDOW_SECONDS": "${GUARD_RISK_WINDOW_SECONDS:-300}",
-        "RPC_L2": "http://l2-geth:8545",
+        "RPC_L2": "http://ghost-exec-l2:7260",
         "STATE_DIR": "/state"
       },
       "healthcheck": {
@@ -3423,7 +3423,7 @@
       "command": [
         "op-batcher",
         "--l1-eth-rpc=${L1_RPC:-http://host.docker.internal:18545}",
-        "--l2-eth-rpc=http://l2-geth:8545",
+        "--l2-eth-rpc=http://ghost-exec-l2:7260",
         "--rollup-rpc=http://op-node:9546",
         "--private-key=${BATCHER_KEY}",
         "--rpc.addr=0.0.0.0",
@@ -3531,7 +3531,7 @@
         "PORT": "${GATE_PORT:-8545}",
         "PROPOSER_ADDRESS": "${PROPOSER_ADDRESS:-}",
         "STATE_DIR": "/state",
-        "UPSTREAM_RPC": "${GATE_UPSTREAM_RPC:-http://l2-geth:8545}"
+        "UPSTREAM_RPC": "${GATE_UPSTREAM_RPC:-http://ghost-exec-l2:7260}"
       },
       "extra_hosts": [
         "host.docker.internal:host-gateway"
@@ -3629,7 +3629,7 @@
         "start_period": "25s",
         "test": [
           "CMD-SHELL",
-          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"optimism_syncStatus\",\"params\":[]}' http://localhost:9546 >/dev/null"
+          "wget -qO- http://localhost:7300/metrics >/dev/null"
         ],
         "timeout": "10s"
       },
@@ -3818,7 +3818,7 @@
         "start_period": "25s",
         "test": [
           "CMD-SHELL",
-          "wget -qO- --header='Content-Type: application/json' --post-data='{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"optimism_syncStatus\",\"params\":[]}' http://localhost:9646 >/dev/null"
+          "wget -qO- http://localhost:7303/metrics >/dev/null"
         ],
         "timeout": "10s"
       },
@@ -3990,9 +3990,9 @@
       ],
       "command": [
         "op-challenger",
-        "--l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}",
+        "--l1-eth-rpc=${L3_L1_RPC:-http://ghost-exec-l2:7260}",
         "--rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
-        "--l2-eth-rpc=http://l3-geth:8545",
+        "--l2-eth-rpc=http://ghost-exec-l3:7270",
         "--game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}",
         "--datadir=/data",
         "--private-key=${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}",
@@ -4020,7 +4020,7 @@
         "OP_CHALLENGER_CANNON_SERVER": "${OP_CHALLENGER_CANNON_SERVER:-/assets/op-program/op-program}",
         "OP_CHALLENGER_DATADIR": "/data",
         "OP_CHALLENGER_GAME_FACTORY_ADDRESS": "${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}",
-        "OP_CHALLENGER_L1_BEACON": "${L3_L1_BEACON_RPC:-${L3_L1_RPC:-http://l2-geth:8545}}",
+        "OP_CHALLENGER_L1_BEACON": "${L3_L1_BEACON_RPC:-${L3_L1_RPC:-http://ghost-exec-l2:7260}}",
         "OP_CHALLENGER_L1_GENESIS": "/config/l1-chain.json",
         "OP_CHALLENGER_PRIVATE_KEY": "${L3_CHALLENGER_KEY:-${CHALLENGER_KEY:-}}",
         "OP_CHALLENGER_ROLLUP_RPC": "http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",

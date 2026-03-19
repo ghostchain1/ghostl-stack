@@ -15,8 +15,8 @@ const ROOT = process.env.GHOSTSTACK_ROOT ?? "/home/ghost/ghostl-stack";
 
 const NODES: Record<string, string> = {
   "GhostChain L1": process.env.GHOST_L1_RPC  ?? "http://localhost:18545",
-  "GhostL2":       process.env.GHOST_L2_RPC  ?? "http://localhost:29547",
-  "GhostL3":       process.env.GHOST_L3_RPC  ?? "http://localhost:39545",
+  "GhostL2":       process.env.GHOST_L2_RPC  ?? "http://localhost:7260",
+  "GhostL3":       process.env.GHOST_L3_RPC  ?? "http://localhost:7270",
 };
 
 async function main(): Promise<void> {

@@ -28,8 +28,8 @@ export const CHAIN_IDS = {
 // ── RPC endpoints ─────────────────────────────────────────────────────────────
 export const RPC_ENDPOINTS = {
   L1: process.env.L1_RPC ?? "http://localhost:18545",
-  L2: process.env.L2_RPC ?? "http://localhost:29547",
-  L3: process.env.L3_RPC ?? "http://localhost:39545",
+  L2: process.env.L2_RPC ?? "http://localhost:7260",
+  L3: process.env.L3_RPC ?? "http://localhost:7270",
 } as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────

@@ -1,0 +1,46 @@
+{
+  "name": "GhostL3",
+  "layer": "L3",
+  "parentLayer": "L2",
+  "chainId": 903,
+  "parentChainId": 901,
+  "rpcUrl": "${GHOST_L3_RPC_URL:-http://ghostl3:8545}",
+  "wsUrl": "${GHOST_L3_WS_URL:-ws://ghostl3:8546}",
+  "blockExplorer": "${GHOST_L3_EXPLORER_URL:-http://ghostscout-l3:4000}",
+  "nativeCurrency": {
+    "name": "Ghost",
+    "symbol": "GST",
+    "decimals": 18
+  },
+  "stack": "ghost-custom",
+  "stackVersion": "1.0.0",
+  "sequencer": {
+    "address": "${GHOST_L3_SEQUENCER_ADDRESS}",
+    "endpoint": "${GHOST_L3_SEQUENCER_URL:-http://ghost-sequencer:7261}"
+  },
+  "settlement": {
+    "rollupAddress": "0x130A46b6E41DB6E1e18fb9c759F223c459190e90",
+    "finalityOracle": "0x87F850cbC2cFfac086F20d0d7307E12d06fA2127",
+    "endpoint": "${GHOST_SETTLEMENT_URL:-http://ghost-settlement:7263}"
+  },
+  "bridge": {
+    "l2l3Bridge": "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2",
+    "inboxAddress": "${GHOST_L3_INBOX_ADDRESS:-0x3155755b79aA083bd953911C92705B7aA82a18F9}",
+    "outboxAddress": "${GHOST_L3_OUTBOX_ADDRESS}",
+    "endpoint": "${GHOST_BRIDGE_URL:-http://ghost-bridge:7264}"
+  },
+  "proof": {
+    "mode": "fraud",
+    "endpoint": "${GHOST_PROOF_URL:-http://ghost-proof:7265}"
+  },
+  "blockTimeSeconds": 1,
+  "maxBlockGas": 20000000,
+  "baseFeeScalar": 500,
+  "blobBaseFeeScalar": 500,
+  "routing": {
+    "allowedParents": [901],
+    "allowedChildren": [],
+    "policy": "L3->L2->L1",
+    "directL1Bypass": false
+  }
+}

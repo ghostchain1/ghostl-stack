@@ -8,8 +8,8 @@ export type GhostDeployNetwork = 'ghostchain-l1' | 'ghostchain-l2' | 'ghostchain
 
 export const GHOST_DEPLOY_NETWORKS: Record<GhostDeployNetwork, { chainId: number; rpc: string }> = {
   'ghostchain-l1':     { chainId: 14000101, rpc: 'http://localhost:18545' },
-  'ghostchain-l2':     { chainId: 901,      rpc: 'http://localhost:29547' },
-  'ghostchain-l3':     { chainId: 903,      rpc: 'http://localhost:39545' },
+  'ghostchain-l2':     { chainId: 901,      rpc: 'http://localhost:7260' },
+  'ghostchain-l3':     { chainId: 903,      rpc: 'http://localhost:7270' },
   'ghostchain-devnet': { chainId: 14000101, rpc: 'http://localhost:18545' },
 };
 

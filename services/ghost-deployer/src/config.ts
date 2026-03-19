@@ -19,8 +19,8 @@ export const DEPLOYER_PORT  = Number(process.env.DEPLOYER_PORT ?? "7961");
 export const DEPLOYER_BIND  = process.env.DEPLOYER_BIND ?? "127.0.0.1";
 
 export const GHOST_L1_RPC = process.env.GHOST_L1_RPC ?? "http://127.0.0.1:18545";
-export const GHOST_L2_RPC = process.env.GHOST_L2_RPC ?? "http://127.0.0.1:29547";
-export const GHOST_L3_RPC = process.env.GHOST_L3_RPC ?? "http://127.0.0.1:39545";
+export const GHOST_L2_RPC = process.env.GHOST_L2_RPC ?? "http://127.0.0.1:7260";
+export const GHOST_L3_RPC = process.env.GHOST_L3_RPC ?? "http://127.0.0.1:7270";
 
 export const L1_CHAIN_ID = 14000101;
 export const L2_CHAIN_ID = 901;

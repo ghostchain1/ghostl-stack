@@ -44,7 +44,7 @@ export const GHOST_ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
  *
  * @example
  * ```ts
- * const nft = new GhostNFT({ rpc: 'http://localhost:39545' });
+ * const nft = new GhostNFT({ rpc: 'http://localhost:7270' });
  *
  * // Mint a GRC-721
  * const { tokenId } = await nft.mint({

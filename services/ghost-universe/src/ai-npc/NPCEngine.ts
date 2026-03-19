@@ -10,7 +10,7 @@
  */
 
 const GHOSTBRAIN_URL = 'http://localhost:7900';
-const L3_RPC         = 'http://localhost:39545';
+const L3_RPC         = 'http://localhost:7270';
 
 export type NPCRole = 'shop-owner' | 'tour-guide' | 'moderator' | 'game-character' | 'info-bot' | 'event-host';
 

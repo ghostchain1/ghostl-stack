@@ -2,7 +2,7 @@
  * GhostBrain — GhostL3 Inference Gateway (TypeScript)
  *
  * Routes AI inference requests that arrive as L3 transactions or events
- * on GhostL3 (chain_id = 903, RPC :39545) to the GhostBrain compute
+ * on GhostL3 (chain_id = 903, RPC :7270) to the GhostBrain compute
  * engine, and returns inference results as L3 settlement transactions.
  *
  * Architecture:
@@ -28,7 +28,7 @@
 
 export {}; // ensure module scope — prevents redeclare conflicts with other runtime files
 
-const L3_RPC_URL        = process.env["GHOSTL3_RPC"]           ?? "http://localhost:39545";
+const L3_RPC_URL        = process.env["GHOSTL3_RPC"]           ?? "http://localhost:7270";
 const GHOSTBRAIN_URL    = process.env["GHOSTBRAIN_URL"]         ?? "http://localhost:7900";
 const SIGNING_RELAY     = process.env["SIGNING_RELAY_URL"]      ?? "http://localhost:7910";
 const INFERENCE_GW_L3   = process.env["INFERENCE_GATEWAY_L3"]  ?? "0x0000000000000000000000000000000000007700";

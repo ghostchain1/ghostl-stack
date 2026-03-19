@@ -55,7 +55,7 @@ services:
 
   # GhostL2 RPC
   - name: ghostl2-rpc
-    url: http://38.247.149.220:29547
+    url: http://38.247.149.220:7260
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000
@@ -74,7 +74,7 @@ services:
 
   # GhostL3 RPC
   - name: ghostl3-rpc
-    url: http://38.247.149.221:39545
+    url: http://38.247.149.221:7270
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000
@@ -206,7 +206,7 @@ services:
             headers: ["X-Ghost-Region:asia"]
 
   - name: ghostl2-rpc-us
-    url: http://38.247.149.220:29547
+    url: http://38.247.149.220:7260
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000
@@ -231,7 +231,7 @@ services:
             headers: ["X-Ghost-Region:us"]
 
   - name: ghostl2-rpc-eu
-    url: http://38.247.149.220:29547
+    url: http://38.247.149.220:7260
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000
@@ -256,7 +256,7 @@ services:
             headers: ["X-Ghost-Region:eu"]
 
   - name: ghostl2-rpc-asia
-    url: http://38.247.149.220:29547
+    url: http://38.247.149.220:7260
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000
@@ -281,7 +281,7 @@ services:
             headers: ["X-Ghost-Region:asia"]
 
   - name: ghostl3-rpc-us
-    url: http://38.247.149.221:39545
+    url: http://38.247.149.221:7270
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000
@@ -306,7 +306,7 @@ services:
             headers: ["X-Ghost-Region:us"]
 
   - name: ghostl3-rpc-eu
-    url: http://38.247.149.221:39545
+    url: http://38.247.149.221:7270
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000
@@ -331,7 +331,7 @@ services:
             headers: ["X-Ghost-Region:eu"]
 
   - name: ghostl3-rpc-asia
-    url: http://38.247.149.221:39545
+    url: http://38.247.149.221:7270
     connect_timeout: 10000
     write_timeout:   30000
     read_timeout:    30000

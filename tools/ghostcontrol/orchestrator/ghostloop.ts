@@ -80,8 +80,8 @@ const DEFAULT_EVIDENCE_ATTESTATION_DIR =
 const DEFAULT_GOVERNANCE_GATE_DIR =
   "/home/ghost/ghostl-stack/tools/ghostcontrol/governance/gates";
 const DEFAULT_L1_RPC = "http://localhost:18545";
-const DEFAULT_L2_RPC = "http://localhost:29547";
-const DEFAULT_L3_RPC = "http://localhost:39545";
+const DEFAULT_L2_RPC = "http://localhost:7260";
+const DEFAULT_L3_RPC = "http://localhost:7270";
 const DEFAULT_L1_CHAIN_ID = "14000101";
 const DEFAULT_L2_CHAIN_ID = "901";
 const DEFAULT_L3_CHAIN_ID = "903";

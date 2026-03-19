@@ -3,7 +3,7 @@
  *
  * Aggregates pool data from:
  *   - GhostBrain liquidity endpoint
- *   - Direct L2/L3 bridge contract balance reads (eth_call)
+ *   - Direct L1/L2 bridge contract balance reads (ghost_getBalance)
  *
  * Canonical bridge addresses (from copilot-instructions.md):
  *   L2L3Bridge        0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2
@@ -38,7 +38,7 @@ async function getBalance(rpc: string, address: string): Promise<bigint | null> 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         jsonrpc: '2.0', id: 1,
-        method:  'eth_getBalance',
+        method:  'ghost_getBalance',
         params:  [address, 'latest'],
       }),
       signal: AbortSignal.timeout(5_000),

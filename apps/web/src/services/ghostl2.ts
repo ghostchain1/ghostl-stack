@@ -1,8 +1,8 @@
 /**
- * ghostl2.ts — GhostL2 OP Stack specific service client.
+ * ghostl2.ts — GhostL2 service client.
  *
- * GhostL2 (chain_id=901, RPC :29547) is an OP Stack rollup anchored to
- * GhostChain L1.  This module provides L2-specific queries beyond the
+ * GhostL2 (chain_id=901, RPC :29547) anchors to GhostChain L1. This module provides
+ * L2-specific queries beyond the
  * generic chain-status that ghostchain.ts exposes.
  *
  * All calls go through BFF routes — raw node URLs never reach the browser.

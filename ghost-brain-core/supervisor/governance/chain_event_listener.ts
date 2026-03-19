@@ -37,8 +37,8 @@ async function ghostCall<T>(rpcUrl: string, method: string, params: unknown[]): 
 // ---------------------------------------------------------------------------
 
 const L1_RPC = process.env["GHOSTCHAIN_L1_RPC"] ?? "http://localhost:18545";
-const L2_RPC = process.env["GHOSTL2_RPC"]       ?? "http://localhost:29547";
-const L3_RPC = process.env["GHOSTL3_RPC"]       ?? "http://localhost:39545";
+const L2_RPC = process.env["GHOSTL2_RPC"]       ?? "http://localhost:7260";
+const L3_RPC = process.env["GHOSTL3_RPC"]       ?? "http://localhost:7270";
 
 /** L1 finality oracle — used to derive L2 block lag baseline. */
 const FINALITY_ORACLE_L1 = process.env["FINALITY_ORACLE_L1"]

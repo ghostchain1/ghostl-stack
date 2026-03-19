@@ -16,8 +16,8 @@ x-web-defaults: &web-defaults
   environment:
     NEXT_PUBLIC_API_URL: http://localhost:4000
     NEXT_PUBLIC_RPC_L1: http://localhost:18545
-    NEXT_PUBLIC_RPC_L2: http://localhost:29547
-    NEXT_PUBLIC_RPC_L3: http://localhost:39545
+    NEXT_PUBLIC_RPC_L2: http://localhost:7260
+    NEXT_PUBLIC_RPC_L3: http://localhost:7270
   healthcheck:
     test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:' + (process.env.PORT||3000) + '/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\""]
     interval: 30s

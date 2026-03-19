@@ -1,5 +1,5 @@
 /**
- * /api/chains/l3/route.ts — BFF proxy for GhostL3 OP Stack details.
+ * /api/chains/l3/route.ts — BFF proxy for GhostL3 runtime details.
  */
 
 import { NextResponse } from 'next/server';
@@ -38,7 +38,7 @@ export async function GET(): Promise<NextResponse> {
       blockNumber: block,
       gasPriceGwei: gasPrice != null ? gasPrice / 1e9 : null,
       peers,
-      rollupType:  'OP Stack (App)',
+      rollupType:  'Ghost app rollup',
       settlementLayer: 'l2',
       ok: block != null,
     });

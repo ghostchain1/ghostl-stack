@@ -27,7 +27,7 @@ export class GhostValidatorManager {
 
   static async create(): Promise<GhostValidatorManager> {
     const cfg = await ConfigLoader.loadFrom();
-    return new GhostValidatorManager(cfg.rpc.l2 ?? "http://127.0.0.1:29547");
+    return new GhostValidatorManager(cfg.rpc.l2 ?? "http://127.0.0.1:7260");
   }
 
   async start(): Promise<void> {

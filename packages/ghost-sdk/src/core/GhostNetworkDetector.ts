@@ -75,7 +75,7 @@ export class GhostNetworkDetector {
   async detect(rpcUrl: string): Promise<DetectionResult | null> {
     const start = Date.now();
     try {
-      const chainIdHex = await this._rpc(rpcUrl, "eth_chainId", []);
+      const chainIdHex = await this._rpc(rpcUrl, "ghost_chainId", []);
       if (typeof chainIdHex !== "string") return null;
 
       const chainId   = Number(BigInt(chainIdHex));

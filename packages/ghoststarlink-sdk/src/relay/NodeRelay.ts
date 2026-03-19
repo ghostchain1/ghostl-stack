@@ -12,8 +12,8 @@ export type RelayLayer = 'l1' | 'l2' | 'l3';
 
 const LAYER_RPC: Record<RelayLayer, string> = {
   l1: 'http://localhost:18545',
-  l2: 'http://localhost:29547',
-  l3: 'http://localhost:39545',
+  l2: 'http://localhost:7260',
+  l3: 'http://localhost:7270',
 };
 
 type LayerRpcMap = { l1: string; l2: string; l3: string };
@@ -237,8 +237,8 @@ export class NodeRelay {
       nodeId,
       rpcEndpoints: {
         l1: 'http://localhost:18545',
-        l2: 'http://localhost:29547',
-        l3: 'http://localhost:39545',
+        l2: 'http://localhost:7260',
+        l3: 'http://localhost:7270',
       },
       maxQueueSize: 500,
       maxAttempts:  5,

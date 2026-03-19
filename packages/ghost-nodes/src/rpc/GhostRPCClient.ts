@@ -4,10 +4,16 @@
  *
  * GhostRPCClient — low-level Ghost-branded JSON-RPC client.
  *
- * Public TypeScript API uses Ghost-branded method names (ghost_*).
+ * Public TypeScript API uses Ghost-branded method names (ghost_* / ghost_compat_*).
  * Wire transport translates to EVM JSON-RPC internally.
  * No eth_* names leak to any consumer of this client.
  */
+
+import {
+  GhostRPCCompatMethod,
+  GhostRPCLegacyRollupMethod,
+  type GhostRPCCompatMethodName,
+} from "./GhostRPCMethod.js";
 
 // ─── Internal wire map (NOT exported) ────────────────────────────────────────
 // ghost_* → eth_* / optimism_* / net_* / debug_* wire names.
@@ -48,16 +54,28 @@ const _WIRE_MAP: Readonly<Record<string, string>> = Object.freeze({
   ghost_version:                    "net_version",
   ghost_clientVersion:              "web3_clientVersion",
   ghost_sha3:                       "web3_sha3",
-  ghost_syncStatus:                 "optimism_syncStatus",
-  ghost_outputAtBlock:              "optimism_outputAtBlock",
-  ghost_rollupConfig:               "optimism_rollupConfig",
-  ghost_safeHeadAtL1Block:          "optimism_safeHeadAtL1Block",
+
+  // Legacy rollup aliases are preserved internally for backward compatibility,
+  // but they are intentionally isolated away from the package root export.
+  [GhostRPCLegacyRollupMethod.getSyncStatus]:        "optimism_syncStatus",
+  [GhostRPCLegacyRollupMethod.getOutputAtBlock]:     "optimism_outputAtBlock",
+  [GhostRPCLegacyRollupMethod.getRollupConfig]:      "optimism_rollupConfig",
+  [GhostRPCLegacyRollupMethod.getSafeHeadAtL1Block]: "optimism_safeHeadAtL1Block",
+
+  // Explicit rollup-compat boundary for new code.
+  [GhostRPCCompatMethod.getSyncStatus]:        "optimism_syncStatus",
+  [GhostRPCCompatMethod.getOutputAtBlock]:     "optimism_outputAtBlock",
+  [GhostRPCCompatMethod.getRollupConfig]:      "optimism_rollupConfig",
+  [GhostRPCCompatMethod.getSafeHeadAtL1Block]: "optimism_safeHeadAtL1Block",
+
   ghost_getValidators:              "clique_getSigners",
   ghost_getSnapshot:                "clique_getSnapshot",
   ghost_traceTransaction:           "debug_traceTransaction",
   ghost_traceBlock:                 "debug_traceBlockByNumber",
   ghost_storageRangeAt:             "debug_storageRangeAt",
 });
+
+const _COMPAT_METHODS = new Set<string>(Object.values(GhostRPCCompatMethod));
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -138,6 +156,19 @@ export class GhostRPCClient {
     const id  = this._id++;
     const req: JSONRPCRequest = { jsonrpc: "2.0", method: wireMethod, params, id };
     return this._callWithFailover<T>(req, ghostMethod);
+  }
+
+  /**
+   * Make an explicit rollup-compat JSON-RPC call.
+   *
+   * Use this for legacy L2/L3 rollup telemetry that still depends on the
+   * pre-custom-runtime RPC surface.
+   */
+  async callCompat<T = unknown>(ghostCompatMethod: GhostRPCCompatMethodName, params: unknown[]): Promise<T> {
+    if (!_COMPAT_METHODS.has(ghostCompatMethod)) {
+      throw new Error(`GhostRPCClient: unknown Ghost compat RPC method "${ghostCompatMethod}"`);
+    }
+    return this.call<T>(ghostCompatMethod, params);
   }
 
   /**

@@ -22,7 +22,7 @@ import type { GhostDeFiConfig } from './types.js';
  * import { GhostDeFi } from '@ghostchain/ghostdefi-sdk';
  *
  * const defi = new GhostDeFi({
- *   rpc: 'http://localhost:29547',            // GhostL2
+ *   rpc: 'http://localhost:7260',            // GhostL2
  *   routerAddress: '0x...',
  *   factoryAddress: '0x...',
  *   wgstAddress: '0x...',

@@ -4,7 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { ethers } from 'ethers'; // brand-enforcer-ignore
+import { ethers } from 'ethers';
 import { z } from 'zod';
 import { v4 as uuid } from 'uuid';
 import Database from 'better-sqlite3';

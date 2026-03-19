@@ -2,7 +2,8 @@ import { keccak256 }            from "@ghostchain/sdk";
 import type { GhostStackConfig } from "../config.js";
 import { PolicyViolationError }  from "../errors.js";
 import type { GhostBrainWS }     from "../ai/GhostBrainWS.js";
-import type { GhostLayer, TxRequest, TxRouteDecision } from "./Types.js";
+import type { GhostLayer, GhostTargetLayer, TxRequest, TxRouteDecision } from "./Types.js";
+import { buildDeterministicRoutePlan, normalizeRouteDecision } from "./routing.js";
 
 export class LayerRouter {
   constructor(
@@ -39,9 +40,17 @@ export class LayerRouter {
   async decideRoute(params: {
     from:    GhostLayer;
     tx:      TxRequest;
+    targetLayer?: GhostTargetLayer;
     intent?: "transfer" | "contract_call" | "bridge" | "governance" | "unknown";
   }): Promise<TxRouteDecision> {
-    const { from, tx, intent } = params;
+    const { from, tx, intent, targetLayer } = params;
+    const desiredTargetLayer = targetLayer ?? from;
+    const fallbackPlan = buildDeterministicRoutePlan({
+      from,
+      targetLayer: desiredTargetLayer,
+      routingPath: this.cfg.policy.routingPath,
+      reason: "Fallback deterministic routing",
+    });
 
     // Extract 4-byte function selector for GhostBrain's heuristic routing.
     // A valid calldata selector is exactly 0x + 8 hex chars (10 chars total).
@@ -53,6 +62,8 @@ export class LayerRouter {
       type:        "tx_route_decision",
       from,
       intent:      intent ?? "unknown",
+      targetLayer: desiredTargetLayer,
+      targetAddress: tx.to,
       to:          tx.to,
       value:       tx.value?.toString() ?? "0",
       selector,
@@ -66,31 +77,22 @@ export class LayerRouter {
         brainReq,
         { timeoutMs: 2_500 }
       );
+      const normalized = normalizeRouteDecision(out, fallbackPlan);
 
       // Validate returned plan against policy
-      const { path } = out.plan;
+      const { path } = normalized.plan;
       for (let i = 0; i < path.length - 1; i++) {
         this.enforcePolicy(path[i]!, path[i + 1]!);
       }
-      return out;
+      return normalized;
     } catch {
-      // Deterministic fallback
-      const fullPath = this.cfg.policy.routingPath;
-      const idx      = fullPath.indexOf(from);
-      const planPath = (idx >= 0 ? fullPath.slice(idx) : [from, "L2" as GhostLayer, "L1" as GhostLayer]);
-
-      for (let i = 0; i < planPath.length - 1; i++) {
-        this.enforcePolicy(planPath[i]!, planPath[i + 1]!);
+      for (let i = 0; i < fallbackPlan.path.length - 1; i++) {
+        this.enforcePolicy(fallbackPlan.path[i]!, fallbackPlan.path[i + 1]!);
       }
 
       return {
-        plan: {
-          path:              planPath,
-          executeOn:         from,
-          requiresMessaging: planPath.length > 1,
-          reason:            "Fallback deterministic routing",
-        },
-        riskScore: 0.25,
+        plan: fallbackPlan,
+        riskScore: fallbackPlan.requiresMessaging ? 0.25 : 0.05,
         notes:     ["GhostBrain unavailable — using deterministic routing."],
       };
     }

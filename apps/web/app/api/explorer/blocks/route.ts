@@ -7,7 +7,7 @@
  *
  * First tries the GhostScan API (via the existing catch-all proxy) when
  * GHOSTSCOUT_*_INTERNAL is configured; falls back to direct JSON-RPC
- * eth_getBlockByNumber calls so the explorer always shows data.
+ * ghost_getBlockByNumber calls so the explorer always shows data.
  *
  * Env vars:
  *   GHOSTSCOUT_L1_INTERNAL, GHOSTSCOUT_L2_INTERNAL, GHOSTSCOUT_L3_INTERNAL

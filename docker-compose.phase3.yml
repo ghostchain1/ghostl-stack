@@ -65,8 +65,8 @@ services:
       PORT: 8088
       NET_ENV: ${NET_ENV:-dev}
       RPC_L1: http://ghost-mapper:18545
-      RPC_L2: http://ghost-mapper:29547
-      RPC_L3: http://ghost-mapper:39545
+      RPC_L2: http://ghost-exec-l2:7260
+      RPC_L3: http://ghost-exec-l3:7270
       RPC_L1_WS: ${RPC_L1_WS:-}
       RPC_L2_WS: ${RPC_L2_WS:-}
       RPC_L3_WS: ${RPC_L3_WS:-}
@@ -95,8 +95,8 @@ services:
       PORT: 7070
       STATE_DIR: /state
       RPC_L1: http://ghost-mapper:18545
-      RPC_L2: http://ghost-mapper:29547
-      RPC_L3: http://ghost-mapper:39545
+      RPC_L2: http://ghost-exec-l2:7260
+      RPC_L3: http://ghost-exec-l3:7270
       ADMIN_TOKEN_FILE: /run/secrets/ghost_guard_admin_token
       PRIVATE_KEY_FILE: /run/secrets/ghost_guard_private_key
       AI_SIGNER_PRIVATE_KEY_FILE: /run/secrets/ghost_guard_ai_private_key

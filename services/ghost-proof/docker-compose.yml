@@ -1,0 +1,19 @@
+services:
+  ghost-proof:
+    build:
+      context: ../..
+      dockerfile: services/ghost-proof/Dockerfile
+    env_file: .env.example
+    ports:
+      - "7265:7265"
+    volumes:
+      - ghost-proof-state:/state
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "healthcheck.sh"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  ghost-proof-state:

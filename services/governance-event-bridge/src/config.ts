@@ -11,7 +11,7 @@ import { z } from "zod";
 const Env = z.object({
   // ── Chain RPC endpoints ────────────────────────────────────────────────────
   RPC_L1: z.string().url().default("http://localhost:18545"),
-  RPC_L2: z.string().url().default("http://localhost:29547"),
+  RPC_L2: z.string().url().default("http://localhost:7260"),
 
   // ── Governor contract addresses per layer (empty = skip that layer) ────────
   GOVERNOR_ADDRESS_L1: z.string().default(""),

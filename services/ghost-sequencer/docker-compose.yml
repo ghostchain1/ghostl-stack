@@ -1,0 +1,14 @@
+services:
+  ghost-sequencer:
+    build:
+      context: ../..
+      dockerfile: services/ghost-sequencer/Dockerfile
+    env_file: .env.example
+    ports:
+      - "7261:7261"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "healthcheck.sh"]
+      interval: 15s
+      timeout: 5s
+      retries: 3

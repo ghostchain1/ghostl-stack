@@ -224,6 +224,24 @@ const EXECUTION_METHOD_SUFFIXES = new Set([
   "unsubscribe"
 ]);
 
+const ROLLUP_COMPAT_CANONICAL_TO_UPSTREAM = Object.freeze({
+  ghost_compat_syncStatus: "optimism_syncStatus",
+  ghost_compat_outputAtBlock: "optimism_outputAtBlock",
+  ghost_compat_rollupConfig: "optimism_rollupConfig",
+  ghost_compat_safeHeadAtL1Block: "optimism_safeHeadAtL1Block"
+});
+
+const ROLLUP_COMPAT_ALIAS_TO_CANONICAL = Object.freeze({
+  ghost_syncStatus: "ghost_compat_syncStatus",
+  ghost_outputAtBlock: "ghost_compat_outputAtBlock",
+  ghost_rollupConfig: "ghost_compat_rollupConfig",
+  ghost_safeHeadAtL1Block: "ghost_compat_safeHeadAtL1Block",
+  optimism_syncStatus: "ghost_compat_syncStatus",
+  optimism_outputAtBlock: "ghost_compat_outputAtBlock",
+  optimism_rollupConfig: "ghost_compat_rollupConfig",
+  optimism_safeHeadAtL1Block: "ghost_compat_safeHeadAtL1Block"
+});
+
 function mapAliasMethod(method, targetPrefix) {
   const match = /^(ghost|gst|eth)_(.+)$/.exec(method);
   if (!match) return "";
@@ -232,8 +250,32 @@ function mapAliasMethod(method, targetPrefix) {
   return `${targetPrefix}_${suffix}`;
 }
 
+function normalizeRollupCompatMethod(method) {
+  if (!method || typeof method !== "string") return null;
+  if (Object.hasOwn(ROLLUP_COMPAT_CANONICAL_TO_UPSTREAM, method)) {
+    return {
+      canonical: method,
+      upstream: ROLLUP_COMPAT_CANONICAL_TO_UPSTREAM[method],
+      aliasFrom: ""
+    };
+  }
+  const canonical = ROLLUP_COMPAT_ALIAS_TO_CANONICAL[method];
+  if (!canonical) return null;
+  return {
+    canonical,
+    upstream: ROLLUP_COMPAT_CANONICAL_TO_UPSTREAM[canonical],
+    aliasFrom: method
+  };
+}
+
 function normalizeRpcMethod(method) {
   if (!method || typeof method !== "string") return { canonical: "", upstream: "", aliasFrom: "" };
+
+  // Rollup compatibility is its own boundary. Keep it active even if the
+  // execution alias namespace remaps are disabled.
+  const compat = normalizeRollupCompatMethod(method);
+  if (compat) return compat;
+
   if (!RPC_ENABLE_GST_NAMESPACE) return { canonical: method, upstream: method, aliasFrom: "" };
 
   let canonical = method;

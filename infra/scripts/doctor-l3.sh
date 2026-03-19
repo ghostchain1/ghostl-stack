@@ -70,7 +70,7 @@ L2_CHAIN_JSON="${L2_CHAIN_JSON:-$L3_CONFIG_DIR/l1-chain.json}"
 
 HOST_L2_RPC="${HOST_L2_RPC:-${PARENT_L2_RPC:-http://localhost:29547}}"
 HOST_L3_RPC="${HOST_L3_RPC:-${L3_RPC:-http://localhost:39545}}"
-L3_ROLLUP_RPC="${L3_ROLLUP_RPC:-http://localhost:${L3_ROLLUP_RPC_HOST_PORT:-39546}}"
+L3_ROLLUP_RPC="${L3_ROLLUP_RPC:-http://localhost:${L3_ROLLUP_RPC_HOST_PORT:-${L3_ROLLUP_PROXY_HOST_PORT:-39546}}}"
 
 L3_GETH_METRICS_URL="${L3_GETH_METRICS_URL:-http://localhost:${L3_GETH_METRICS_HOST_PORT:-39606}/debug/metrics/prometheus}"
 L3_OP_NODE_METRICS_URL="${L3_OP_NODE_METRICS_URL:-http://localhost:${L3_METRICS_NODE_HOST_PORT:-8300}/metrics}"
@@ -165,6 +165,11 @@ jsonrpc_params() {
   local params="$3"
   curl -fsS -X POST "$url" -H 'content-type: application/json' \
     --data "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"${method}\",\"params\":${params}}" || return 1
+}
+
+rollup_sync_status() {
+  local url="$1"
+  jsonrpc "$url" "ghost_compat_syncStatus"
 }
 
 json_result() {
@@ -593,7 +598,7 @@ else
   fi
 fi
 
-if ! jsonrpc "$L3_ROLLUP_RPC" optimism_syncStatus >/dev/null 2>&1; then
+if ! rollup_sync_status "$L3_ROLLUP_RPC" >/dev/null 2>&1; then
   fail "op-node RPC not reachable at $L3_ROLLUP_RPC"
 fi
 
@@ -646,7 +651,7 @@ else
   warn "rollup.json genesis.l2.hash not set"
 fi
 
-SYNC_RAW="$(jsonrpc "$L3_ROLLUP_RPC" "optimism_syncStatus" || true)"
+SYNC_RAW="$(rollup_sync_status "$L3_ROLLUP_RPC" || true)"
 SYNC_HEAD_L1_NUM="$(python3 - <<'PY' "$SYNC_RAW"
 import json, sys
 raw = sys.argv[1]
@@ -719,9 +724,9 @@ if [ "$SYNC_HEAD_L1_NUM" -gt 0 ]; then
     fi
   else
     if [ "$L3_REQUIRE_L3_PROGRESS" = "1" ]; then
-      # Some stacks report zeros for optimism_syncStatus while execution blocks are advancing.
+      # Some stacks report zeros for rollup sync status while execution blocks are advancing.
       # For progress gating, we rely on eth_blockNumber delta (checked earlier).
-      warn "optimism_syncStatus reports unsafe_l2=0; skipping derivation/safe-lag checks"
+      warn "rollup sync status reports unsafe_l2=0; skipping derivation/safe-lag checks"
     fi
     echo "OK: derivation/safe-lag checks skipped (insufficient syncStatus data)"
   fi

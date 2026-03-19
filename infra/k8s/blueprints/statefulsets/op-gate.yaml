@@ -77,7 +77,7 @@
               },
               {
                 "name": "UPSTREAM_RPC",
-                "value": "${GATE_UPSTREAM_RPC:-http://l2-geth:8545}"
+                "value": "${GATE_UPSTREAM_RPC:-http://ghost-exec-l2:7260}"
               }
             ],
             "ports": [

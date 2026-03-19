@@ -71,15 +71,16 @@ L2_CHAIN_ID=901
 
 # ── L2 ports (op-geth) ────────────────────────────────────────────────────────
 L2_GETH_HTTP_PORT=29547
-L2_GETH_WS_PORT=29546
+L2_GETH_WS_PORT=29548
 L2_GETH_AUTH_PORT=29551
 L2_GETH_P2P_PORT=30306
 L2_GETH_METRICS_PORT=29660
 
-# ── L2 ports (op-node) ────────────────────────────────────────────────────────
-# Internal rollup RPC only; canonical direct GhostL2 host RPC remains :29547.
-# This is the host-exposed op-node RPC used for sync/admin checks.
+# ── L2 ports (rollup compat proxy + op-node) ──────────────────────────────────
+# Canonical direct GhostL2 host RPC remains :29547.
+# The host-exposed rollup compat proxy used for sync/admin checks is :29546.
 L2_OP_NODE_RPC_PORT=29546
+L2_OP_NODE_DIRECT_RPC_PORT=9546
 L2_OP_NODE_METRICS_PORT=29661
 
 # ── L2 ports (op-batcher) ─────────────────────────────────────────────────────
@@ -216,7 +217,7 @@ sync_check() {
   local res
   res=\$(curl -sSf --max-time 6 -X POST "\$url" \\
     -H "Content-Type: application/json" \\
-    -d '{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}' 2>/dev/null || echo "")
+    -d '{"jsonrpc":"2.0","id":1,"method":"ghost_compat_syncStatus","params":[]}' 2>/dev/null || echo "")
   if echo "\$res" | grep -q '"result"'; then
     echo "  OK   \${name} sync OK"
     (( ok++ )) || true
@@ -228,7 +229,7 @@ sync_check() {
 
 echo "=== GhostL2 health [${ENV}] \$(date -u +%H:%M:%SZ) ==="
 rpc_check  "L2 op-geth  :29547" "http://localhost:29547"
-sync_check "L2 op-node  :29546" "http://localhost:29546"
+sync_check "L2 rollup proxy :29546" "http://localhost:29546"
 rpc_check  "L1 settle   :18545" "http://${L1_VM_IP}:18545"
 
 echo "--- ok=\${ok} fail=\${fail} ---"
@@ -270,7 +271,8 @@ log "  ENV         : ${ENV}"
 log "  VM IP       : ${VM_IP}"
 log "  L1 settle   : http://${L1_VM_IP}:18545"
 log "  L2 RPC      : http://${VM_IP}:29547"
-log "  L2 op-node  : http://${VM_IP}:29546"
+log "  L2 rollup proxy : http://${VM_IP}:29546"
+log "  L2 op-node direct: http://${VM_IP}:9546"
 log "  Service     : sudo journalctl -u ${SVC_NAME} -f"
 log "  Health      : sudo ${HEALTH_BIN}"
 log ""

@@ -8,7 +8,7 @@
  * Cross-layer withdrawals route L3 → L2 → L1 per GhostChain routing law.
  */
 
-const L3_RPC         = 'http://localhost:39545';
+const L3_RPC         = 'http://localhost:7270';
 const GST_UNIT       = 10n ** 18n;
 const PLATFORM_FEE_BPS = 250n;   // 2.5 %
 const MAX_ROYALTY_BPS  = 1000n;  // 10 % cap
@@ -251,6 +251,6 @@ export class EconomyEngine {
   }
 
   static devnet(): EconomyEngine {
-    return new EconomyEngine('http://localhost:39545');
+    return new EconomyEngine('http://localhost:7270');
   }
 }

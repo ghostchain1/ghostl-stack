@@ -3,8 +3,8 @@
  *
  * Monitors the three GhostStack JSON-RPC endpoints:
  *   L1  :18545  (GhostChain Sovereign, ghost_ namespace)
- *   L2  :29547  (GhostL2 OP Stack)
- *   L3  :39545  (GhostL3 OP Stack)
+ *   L2  :29547  (GhostL2 canonical execution RPC)
+ *   L3  :39545  (GhostL3 canonical execution RPC)
  *
  * Tracks latency, block height drift, peer count, and RPC availability.
  * Emits memory events when nodes degrade so GhostBrain can act.

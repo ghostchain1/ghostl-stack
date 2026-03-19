@@ -102,7 +102,12 @@ export function seedDemo(dbPath: string, env: HgEnv) {
       expected_benefit: 55,
       rollback_plan_json: JSON.stringify({ steps: ['docker restart opstack-l3-op-batcher-1 (if needed)'] }),
       verification_steps_json: JSON.stringify([
-        { kind: 'http', url: 'http://localhost:39546', method: 'POST', body: { method: 'optimism_syncStatus' } }
+        {
+          kind: 'http',
+          url: 'http://localhost:39546',
+          method: 'POST',
+          body: { jsonrpc: '2.0', id: 1, method: 'ghost_compat_syncStatus', params: [] }
+        }
       ]),
       required_gates: 'devnet_exec',
       score: 55 - 10 - 0 - 15

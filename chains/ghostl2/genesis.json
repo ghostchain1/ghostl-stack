@@ -1,0 +1,49 @@
+{
+  "config": {
+    "chainId": 901,
+    "homesteadBlock": 0,
+    "eip150Block": 0,
+    "eip155Block": 0,
+    "eip158Block": 0,
+    "byzantiumBlock": 0,
+    "constantinopleBlock": 0,
+    "petersburgBlock": 0,
+    "istanbulBlock": 0,
+    "muirGlacierBlock": 0,
+    "berlinBlock": 0,
+    "londonBlock": 0,
+    "arrowGlacierBlock": 0,
+    "grayGlacierBlock": 0,
+    "mergeNetsplitBlock": 0,
+    "shanghaiTime": 0,
+    "cancunTime": 0,
+    "ghostCustomL2": {
+      "enabled": true,
+      "sequencerInbox": "0x0000000000000000000000000000000000000010",
+      "settlementRollup": "0xad32D5C2Da9f4159C4cc98686C005852b3905355",
+      "finalityOracle": "0x7B3Be2dDDdDf9A0a3fE1DC57B98980F662C3a422"
+    }
+  },
+  "nonce": "0x0",
+  "timestamp": "0x0",
+  "extraData": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "gasLimit": "0x1c9c380",
+  "difficulty": "0x0",
+  "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "coinbase": "0x0000000000000000000000000000000000000000",
+  "alloc": {
+    "0x4200000000000000000000000000000000000010": {
+      "balance": "0x0",
+      "comment": "GhostL2 L2StandardBridge precompile slot"
+    },
+    "0x4200000000000000000000000000000000000015": {
+      "balance": "0x0",
+      "comment": "GhostL2 L2ToL1MessagePasser precompile slot"
+    },
+    "0x4200000000000000000000000000000000000016": {
+      "balance": "0x0",
+      "comment": "GhostL2 L2CrossDomainMessenger precompile slot"
+    }
+  },
+  "baseFeePerGas": "0x3b9aca00"
+}

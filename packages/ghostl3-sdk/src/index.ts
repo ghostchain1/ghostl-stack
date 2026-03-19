@@ -1,15 +1,20 @@
 // GhostL3 SDK — GhostChain Application Execution Layer
-// OP-Stack app-specific chain anchored to GhostL2
-// Chain ID: 903 | RPC: http://localhost:39545
+// Legacy rollup telemetry remains available through the explicit Ghost compat RPC surface.
+// Chain ID: 903 | RPC: http://localhost:7270
 //
 // ROUTING LAW: L3 → L2 → L1 only. L3 NEVER communicates with L1 directly.
 
 import type { BridgeTransferReceipt } from '@ghostchain/ghostbridge-sdk';
 
+const GHOST_L3_COMPAT_RPC = {
+  syncStatus: 'ghost_compat_syncStatus',
+  rollupConfig: 'ghost_compat_rollupConfig',
+} as const;
+
 /** GhostL3 canonical constants */
 export const GHOST_L3 = {
   CHAIN_ID: 903,
-  RPC: 'http://localhost:39545',
+  RPC: 'http://localhost:7270',
   L2_ROLLUP: '0x130A46b6E41DB6E1e18fb9c759F223c459190e90',
   FINALITY_ORACLE: '0x87F850cbC2cFfac086F20d0d7307E12d06fA2127',
   L2L3_BRIDGE: '0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2',
@@ -72,7 +77,7 @@ export class GhostL3 {
 
   constructor(config: GhostL3Config = {}) {
     this.rpc = config.rpc ?? GHOST_L3.RPC;
-    this.l2Rpc = config.l2Rpc ?? 'http://localhost:29547';
+    this.l2Rpc = config.l2Rpc ?? 'http://localhost:7260';
     this.authToken = config.authToken;
   }
 
@@ -83,18 +88,18 @@ export class GhostL3 {
       this._rpc<string>('ghost_blockNumber'),
     ]);
 
-    const opStatus = await this._rpc<{
+    const compatStatus = await this._rpc<{
       safe_l2: { number: number };
       finalized_l2: { number: number };
       current_l1: { number: number };
-    }>('optimism_syncStatus').catch(() => null);
+    }>(GHOST_L3_COMPAT_RPC.syncStatus).catch(() => null);
 
     return {
       chainId: parseInt(chainId, 16),
       blockNumber: BigInt(blockHex),
-      safeBlockNumber: BigInt(opStatus?.safe_l2.number ?? 0),
-      finalizedBlockNumber: BigInt(opStatus?.finalized_l2.number ?? 0),
-      l2AnchorBlock: BigInt(opStatus?.current_l1.number ?? 0),
+      safeBlockNumber: BigInt(compatStatus?.safe_l2.number ?? 0),
+      finalizedBlockNumber: BigInt(compatStatus?.finalized_l2.number ?? 0),
+      l2AnchorBlock: BigInt(compatStatus?.current_l1.number ?? 0),
     };
   }
 
@@ -177,9 +182,9 @@ export class GhostL3 {
     return this._rpc<string>('ghost_call', [{ ...tx, from: tx.from ?? '0x0000000000000000000000000000000000000000' }, 'latest']);
   }
 
-  /** Get rollup config (L3 OP-Stack params) */
+  /** Get rollup config through the explicit rollup-compat boundary. */
   async rollupConfig(): Promise<Record<string, unknown>> {
-    return this._rpc('optimism_rollupConfig');
+    return this._rpc(GHOST_L3_COMPAT_RPC.rollupConfig);
   }
 
   private async _rpc<T>(method: string, params: unknown[] | Record<string, unknown> = []): Promise<T> {

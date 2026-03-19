@@ -1,0 +1,53 @@
+{
+  "config": {
+    "chainId": 903,
+    "homesteadBlock": 0,
+    "eip150Block": 0,
+    "eip155Block": 0,
+    "eip158Block": 0,
+    "byzantiumBlock": 0,
+    "constantinopleBlock": 0,
+    "petersburgBlock": 0,
+    "istanbulBlock": 0,
+    "muirGlacierBlock": 0,
+    "berlinBlock": 0,
+    "londonBlock": 0,
+    "arrowGlacierBlock": 0,
+    "grayGlacierBlock": 0,
+    "mergeNetsplitBlock": 0,
+    "shanghaiTime": 0,
+    "cancunTime": 0,
+    "ghostCustomL3": {
+      "enabled": true,
+      "parentChainId": 901,
+      "sequencerInbox": "0x0000000000000000000000000000000000000010",
+      "settlementRollup": "0x130A46b6E41DB6E1e18fb9c759F223c459190e90",
+      "finalityOracle": "0x87F850cbC2cFfac086F20d0d7307E12d06fA2127",
+      "l2l3Bridge": "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2",
+      "routingPolicy": "L3->L2->L1",
+      "directL1Bypass": false
+    }
+  },
+  "nonce": "0x0",
+  "timestamp": "0x0",
+  "extraData": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "gasLimit": "0x1312D00",
+  "difficulty": "0x0",
+  "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "coinbase": "0x0000000000000000000000000000000000000000",
+  "alloc": {
+    "0x4200000000000000000000000000000000000010": {
+      "balance": "0x0",
+      "comment": "GhostL3 L3StandardBridge precompile slot"
+    },
+    "0x4200000000000000000000000000000000000015": {
+      "balance": "0x0",
+      "comment": "GhostL3 L3ToL2MessagePasser precompile slot"
+    },
+    "0x4200000000000000000000000000000000000016": {
+      "balance": "0x0",
+      "comment": "GhostL3 L3CrossDomainMessenger precompile slot"
+    }
+  },
+  "baseFeePerGas": "0x3b9aca00"
+}

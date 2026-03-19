@@ -108,7 +108,7 @@ export class GhostRpcController {
   }
 
   /**
-   * Probe all endpoints with a lightweight `eth_blockNumber` call and
+   * Probe all endpoints with a lightweight `ghost_blockNumber` call and
    * automatically update health markers.
    */
   async probeAll(timeoutMs = 4_000): Promise<RpcEndpointStatus[]> {
@@ -159,7 +159,7 @@ export class GhostRpcController {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "ghost_blockNumber", params: [] }),
         signal: controller.signal,
       });
       const data = await res.json() as { result?: unknown };

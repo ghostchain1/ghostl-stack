@@ -13,8 +13,8 @@
  *
  * Chains:
  *   L1  GhostChain  chainId=14000101  rpc=GHOST_L1_RPC  (default: :18545)
- *   L2  GhostL2     chainId=901       rpc=GHOST_L2_RPC  (default: :29547)
- *   L3  GhostL3     chainId=903       rpc=GHOST_L3_RPC  (default: :39545)
+ *   L2  GhostL2     chainId=901       rpc=GHOST_L2_RPC  (default: :7260)
+ *   L3  GhostL3     chainId=903       rpc=GHOST_L3_RPC  (default: :7270)
  */
 
 import { buildApp }           from "./app.js";

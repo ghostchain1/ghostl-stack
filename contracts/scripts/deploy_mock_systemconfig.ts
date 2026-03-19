@@ -1,7 +1,7 @@
 import { ghost } from "hardhat";
 
 async function main() {
-  const l2Provider = new ghost.JsonRpcProvider(process.env.RPC_L2 ?? "http://localhost:29547");
+  const l2Provider = new ghost.JsonRpcProvider(process.env.RPC_L2 ?? "http://localhost:7260");
   const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
   if (!deployerKey) {
     throw new Error("missing_DEPLOYER_PRIVATE_KEY");

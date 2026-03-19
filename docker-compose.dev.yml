@@ -13,12 +13,9 @@ services:
     ports:
       - "4000:4000"
     env_file:
-      - path: ./apps/api/.env.example
-        required: true
-      - path: ./apps/api/.env.docker
-        required: false
-      - path: ./services/stack.env
-        required: false
+      - ./apps/api/.env.example
+      - ./apps/api/.env.docker
+      - ./services/stack.env
     environment:
       - NODE_ENV=development
       - PORT=4000
@@ -59,10 +56,8 @@ services:
     ports:
       - "3200:3200"
     env_file:
-      - path: ./apps/web/.env.example
-        required: true
-      - path: ./apps/web/.env.docker
-        required: false
+      - ./apps/web/.env.example
+      - ./apps/web/.env.docker
     environment:
       - NODE_ENV=development
       - PORT=3200

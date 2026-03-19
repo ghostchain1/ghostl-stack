@@ -3,7 +3,7 @@
  * Uses native `fetch` with the `ghost_` namespace to interact with GhostL3.
  */
 
-const L3_RPC = process.env.GHOSTL3_RPC_URL ?? 'http://localhost:39545';
+const L3_RPC = process.env.GHOSTL3_RPC_URL ?? 'http://localhost:7270';
 
 let _reqId = 1;
 

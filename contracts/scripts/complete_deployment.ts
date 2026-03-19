@@ -69,8 +69,8 @@ async function main() {
   const txOpts = { gasLimit: GAS_LIMIT };
 
   const rpcL1 = process.env.RPC_L1 ?? "http://localhost:18545";
-  const rpcL2 = process.env.RPC_L2 ?? "http://localhost:29547";
-  const rpcL3 = process.env.RPC_L3 ?? "http://localhost:39545";
+  const rpcL2 = process.env.RPC_L2 ?? "http://localhost:7260";
+  const rpcL3 = process.env.RPC_L3 ?? "http://localhost:7270";
   const version = process.env.CONTRACTS_VERSION ?? "0.0.1";
   const ROOT = process.env.ROOT_DIR ?? path.resolve(__dirname, "..", "..");
   const enableCascadingFinality = (process.env.ENABLE_CASCADING_FINALITY ?? "true") !== "false";

@@ -39,7 +39,7 @@
             "command": null,
             "args": [
               "op-node",
-              "--l1=${L3_L1_RPC:-http://l2-geth:8545}",
+              "--l1=${L3_L1_RPC:-http://ghost-exec-l2:7260}",
               "--l2=http://l3-geth:8551",
               "--l2.jwt-secret=/config/jwt.txt",
               "--rollup.config=/config/rollup.json",

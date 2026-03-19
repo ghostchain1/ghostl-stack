@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// GhostL3Messenger – L2 → L3 cross-domain messaging
+// GhostL3Messenger – L2 → L3 cross-domain messaging via Ghost relay gateway
 // ─────────────────────────────────────────────────────────────────────────────
 import { GhostProvider } from "../provider/GhostProvider";
 import { GhostChains } from "../chains/ghostChains";
@@ -17,22 +17,28 @@ export interface L3MessageReceipt {
   timestamp: number;
 }
 
-const L2_CROSS_DOMAIN_MESSENGER = "0x4200000000000000000000000000000000000007";
+const DEFAULT_L2_TO_L3_GATEWAY_ADDRESS =
+  process.env.GHOST_L2_TO_L3_GATEWAY_ADDRESS
+  ?? process.env.L2_TO_L3_MESSENGER_ADDRESS
+  ?? "0x4200000000000000000000000000000000000007";
 
 export class GhostL3Messenger {
   private l2Provider: GhostProvider;
   private l3Provider: GhostProvider;
+  private gatewayAddress: string;
 
   constructor(
     l2Rpc = GhostChains.L2.rpc,
-    l3Rpc = GhostChains.L3.rpc
+    l3Rpc = GhostChains.L3.rpc,
+    gatewayAddress = DEFAULT_L2_TO_L3_GATEWAY_ADDRESS,
   ) {
     this.l2Provider = new GhostProvider(l2Rpc);
     this.l3Provider = new GhostProvider(l3Rpc);
+    this.gatewayAddress = gatewayAddress;
   }
 
   async sendMessage(req: L3MessageRequest): Promise<L3MessageReceipt> {
-    const nonce = await this.l2Provider.getTransactionCount(L2_CROSS_DOMAIN_MESSENGER);
+    const nonce = await this.l2Provider.getTransactionCount(this.gatewayAddress);
     const calldata = this._encodeRelayMessage(req);
     const txHash = await this.l2Provider.sendRawTransaction(calldata);
     return { txHash, nonce, timestamp: Date.now() };

@@ -27,7 +27,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: ${GATE_PORT:-8545}
-      UPSTREAM_RPC: ${GATE_UPSTREAM_RPC:-http://l2-geth:8545}
+      UPSTREAM_RPC: ${GATE_UPSTREAM_RPC:-http://ghost-exec-l2:7260}
       STATE_DIR: /state
       ADMIN_TOKEN: ${GATE_ADMIN_TOKEN:-}
       ALLOW_INSECURE_ADMIN: ${GATE_ALLOW_INSECURE_ADMIN:-0}
@@ -179,8 +179,8 @@ services:
       POLICIES_PATH: /app/config/gas-policies.json
       SEED_SAMPLE_DATA: ${GAS_ENGINE_SEED_SAMPLE_DATA:-true}
       RPC_L1: ${HOST_L1_RPC:-http://host.docker.internal:18545}
-      RPC_L2: ${HOST_L2_RPC:-http://host.docker.internal:29547}
-      RPC_L3: ${HOST_L3_RPC:-http://host.docker.internal:39545}
+      RPC_L2: ${HOST_L2_RPC:-http://host.docker.internal:7260}
+      RPC_L3: ${HOST_L3_RPC:-http://host.docker.internal:7270}
       GAS_TOKEN_L1: ${GAS_TOKEN_L1:-GST}
       GAS_TOKEN_L2: ${GAS_TOKEN_L2:-GST}
       GAS_TOKEN_L3: ${GAS_TOKEN_L3:-GST}
@@ -241,8 +241,8 @@ services:
       CHAINS_CONFIG_PATH: /app/config/chains.json
       POLICIES_PATH: /app/config/gas-policies.json
       RPC_L1: ${HOST_L1_RPC:-http://host.docker.internal:18545}
-      RPC_L2: ${HOST_L2_RPC:-http://host.docker.internal:29547}
-      RPC_L3: ${HOST_L3_RPC:-http://host.docker.internal:39545}
+      RPC_L2: ${HOST_L2_RPC:-http://host.docker.internal:7260}
+      RPC_L3: ${HOST_L3_RPC:-http://host.docker.internal:7270}
       GAS_TOKEN_L1: ${GAS_TOKEN_L1:-GST}
       GAS_TOKEN_L2: ${GAS_TOKEN_L2:-GST}
       GAS_TOKEN_L3: ${GAS_TOKEN_L3:-GST}
@@ -284,9 +284,9 @@ services:
     environment:
       PORT: 7070
       RPC_L1: http://l1-rpc-proxy:18546
-      RPC_L2: http://l2-geth:8545
+      RPC_L2: http://ghost-exec-l2:7260
       # Prefer docker-network RPCs when L3 is running (avoids localhost-from-container mistakes).
-      RPC_L3: ${L3_ARCHIVE_RPC:-${HOST_L3_RPC:-http://host.docker.internal:39545}}
+      RPC_L3: ${L3_ARCHIVE_RPC:-${HOST_L3_RPC:-http://host.docker.internal:7270}}
       BRIDGE_L2L3_ADDRESS: ${BRIDGE_L2L3_ADDRESS:-0x0000000000000000000000000000000000000000}
       GUARD_POLICY_ADDRESS: ${GUARD_POLICY_ADDRESS:-}
       PRIVATE_KEY: ${GUARD_PRIVATE_KEY:-}
@@ -374,7 +374,7 @@ services:
         condition: service_healthy
     environment:
       PORT: 8546
-      UPSTREAM_URL: http://l2-geth:8545
+      UPSTREAM_URL: http://ghost-exec-l2:7260
       RPC_ENABLE_GST_NAMESPACE: '1'
       RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
       RPC_RATE_LIMIT_ALLOWLIST: ${L2_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}
@@ -383,6 +383,68 @@ services:
       test:
       - CMD-SHELL
       - "curl -sf http://localhost:8546 -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"gst_chainId\",\"params\":[]}' >/dev/null"
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 15s
+    mem_limit: 128m
+    cpus: '0.25'
+  ghost-rollup-proxy-l2:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/ghost-rpc-proxy
+      dockerfile: Dockerfile
+    image: local/ghost-rpc-proxy:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      op-node:
+        condition: service_healthy
+    environment:
+      PORT: 8546
+      UPSTREAM_URL: http://op-node:9546
+      RPC_ENABLE_GST_NAMESPACE: '1'
+      RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
+      RPC_RATE_LIMIT_ALLOWLIST: ${L2_ROLLUP_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}
+      RPC_CORS_ORIGINS: ${L2_ROLLUP_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
+    ports:
+    - ${OP_NODE_PROXY_HOST_PORT:-29546}:8546
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - "curl -sf http://localhost:8546 -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ghost_compat_syncStatus\",\"params\":[]}' >/dev/null"
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 15s
+    mem_limit: 128m
+    cpus: '0.25'
+  ghost-rollup-proxy-l2-sequencer:
+    cap_drop: *id001
+    security_opt: *id002
+    build:
+      context: ../../services/ghost-rpc-proxy
+      dockerfile: Dockerfile
+    image: local/ghost-rpc-proxy:${OPSTACK_IMAGE_TAG:-devnet}
+    restart: unless-stopped
+    logging: *id003
+    depends_on:
+      op-sequencer:
+        condition: service_healthy
+    environment:
+      PORT: 8546
+      UPSTREAM_URL: http://op-sequencer:9646
+      RPC_ENABLE_GST_NAMESPACE: '1'
+      RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
+      RPC_RATE_LIMIT_ALLOWLIST: ${OP_SEQUENCER_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}
+      RPC_CORS_ORIGINS: ${OP_SEQUENCER_RPC_CORS_ORIGINS:-http://localhost,http://127.0.0.1}
+    ports:
+    - ${OP_SEQUENCER_PROXY_HOST_PORT:-29646}:8546
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - "curl -sf http://localhost:8546 -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ghost_compat_syncStatus\",\"params\":[]}' >/dev/null"
       interval: 20s
       timeout: 10s
       retries: 6
@@ -403,7 +465,7 @@ services:
     environment:
       PORT: 8546
       # Prefer docker-network L3 RPC when running 3-layer stack; override with L3_ARCHIVE_RPC if needed.
-      UPSTREAM_URL: ${L3_ARCHIVE_RPC:-http://l3-geth:8545}
+      UPSTREAM_URL: ${L3_ARCHIVE_RPC:-http://ghost-exec-l3:7270}
       RPC_ENABLE_GST_NAMESPACE: '1'
       RPC_DEPRECATE_LEGACY_NAMESPACE: '1'
       RPC_RATE_LIMIT_ALLOWLIST: ${L3_RPC_RATE_LIMIT_ALLOWLIST:-127.0.0.1,::1,172.28.0.1}
@@ -470,14 +532,14 @@ services:
     depends_on:
       l2-geth:
         condition: service_healthy
-      op-node:
+      ghost-rollup-proxy-l2:
         condition: service_healthy
     environment:
       PORT: 7575
-      RPC_L2: http://l2-geth:8545
-      RPC_URL: http://l2-geth:8545
+      RPC_L2: http://ghost-exec-l2:7260
+      RPC_URL: http://ghost-exec-l2:7260
       RPC_L1: http://l1-rpc-proxy:18546
-      OP_NODE_RPC_URL: http://op-node:9546
+      OP_NODE_RPC_URL: http://ghost-rollup-proxy-l2:8546
       OP_BATCHER_METRICS_URL: http://op-batcher:7301/metrics
       OP_PROPOSER_METRICS_URL: http://op-proposer:7302/metrics
       POLICY_REGISTRY_ADDRESS: ${POLICY_REGISTRY_ADDRESS:-}
@@ -642,8 +704,7 @@ services:
     healthcheck:
       test:
       - CMD-SHELL
-      - 'wget -qO- --header=''Content-Type: application/json'' --post-data=''{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}''
-        http://localhost:9546 >/dev/null'
+      - wget -qO- http://localhost:7300/metrics >/dev/null
       interval: 20s
       timeout: 10s
       retries: 6
@@ -696,8 +757,7 @@ services:
     healthcheck:
       test:
       - CMD-SHELL
-      - 'wget -qO- --header=''Content-Type: application/json'' --post-data=''{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}''
-        http://localhost:9646 >/dev/null'
+      - wget -qO- http://localhost:7303/metrics >/dev/null
       interval: 20s
       timeout: 10s
       retries: 6
@@ -734,7 +794,7 @@ services:
     command:
     - op-batcher
     - --l1-eth-rpc=http://op-gate-l1:8545
-    - --l2-eth-rpc=http://l2-geth:8545
+    - --l2-eth-rpc=http://ghost-exec-l2:7260
     - --rollup-rpc=http://op-sequencer:9646
     - --private-key=${BATCHER_KEY}
     - --rpc.addr=0.0.0.0

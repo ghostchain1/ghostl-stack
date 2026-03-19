@@ -1,27 +1,26 @@
 /**
  * GhostBridgeClient — cross-layer deposit / withdraw / message relay.
  *
- * Wraps L1↔L2↔L3 interactions via the standard OP Stack bridge ABI stubs.
- * The actual contract addresses should be set from your deployment artifacts;
- * the constants provided here are sensible defaults for a local dev-net.
+ * Compatibility shim for legacy bridge ABI stubs while the Ghost-native bridge
+ * client is still being finalized.
+ *
+ * New cross-layer execution should prefer Ghost relay envelopes via
+ * `GhostJsonRpcProvider.crossLayerSend()` or `HopExecutor`.
  */
 
 import { L1Client } from "./L1Client.js";
 import { L2Client } from "./L2Client.js";
 import { L3Client } from "./L3Client.js";
 
-// ── OP Stack bridge deposit ABI fragment (minimal) ──────────────────────────
-const DEPOSIT_ETH_SELECTOR = "0xb1a1a882"; // depositTransaction(address,uint256,uint64,bool,bytes)
-
 export interface BridgeConfig {
   l1Client: L1Client;
   l2Client: L2Client;
   l3Client?: L3Client;
-  /** Standard bridge on L1 — defaults to official OP Stack address */
+  /** L1 rollup / portal address for L1 -> L2 compatibility encoding. */
   l1BridgeAddress?: `0x${string}`;
-  /** Standard bridge on L2 — defaults to official OP Stack predeploy */
+  /** L2 relay / bridge address for L2 -> L1 compatibility encoding. */
   l2BridgeAddress?: `0x${string}`;
-  /** Optional L3 bridge address */
+  /** L2 -> L3 bridge address for compatibility encoding. */
   l3BridgeAddress?: `0x${string}`;
 }
 
@@ -55,7 +54,7 @@ export class GhostBridgeClient {
   readonly l3?: L3Client;
 
   readonly l1BridgeAddress: `0x${string}`;
-  readonly l2BridgeAddress: `0x${string}`;
+  readonly l2BridgeAddress?: `0x${string}`;
   readonly l3BridgeAddress?: `0x${string}`;
 
   constructor(config: BridgeConfig) {
@@ -63,10 +62,19 @@ export class GhostBridgeClient {
     this.l2 = config.l2Client;
     this.l3 = config.l3Client;
     this.l1BridgeAddress =
-      config.l1BridgeAddress ?? "0x636Af16bf2f682dD3109e60102b8E1A089FedAa8";
+      config.l1BridgeAddress
+      ?? normalizeOptionalAddress(process.env.L1_ROLLUP_L2_ADDRESS)
+      ?? "0xad32D5C2Da9f4159C4cc98686C005852b3905355";
     this.l2BridgeAddress =
-      config.l2BridgeAddress ?? "0x4200000000000000000000000000000000000010";
-    this.l3BridgeAddress = config.l3BridgeAddress;
+      config.l2BridgeAddress
+      ?? normalizeOptionalAddress(process.env.L2_TO_L1_GATEWAY_ADDRESS)
+      ?? normalizeOptionalAddress(process.env.L2_TO_L1_MESSENGER_ADDRESS)
+      ?? normalizeOptionalAddress(process.env.L2_CROSS_DOMAIN_MESSENGER_ADDRESS);
+    this.l3BridgeAddress =
+      config.l3BridgeAddress
+      ?? normalizeOptionalAddress(process.env.BRIDGE_L2L3_ADDRESS)
+      ?? normalizeOptionalAddress(process.env.L2L3_BRIDGE_ADDRESS)
+      ?? "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2";
   }
 
   // ── Layer status ──────────────────────────────────────────────────────────
@@ -95,7 +103,7 @@ export class GhostBridgeClient {
   // ── L1 → L2 deposit ──────────────────────────────────────────────────────
 
   /**
-   * Encode a deposit transaction calldata using the OP Stack depositTransaction ABI.
+   * Encode a compatibility deposit calldata using the legacy depositTransaction ABI.
    * The sender must broadcast this via their own signer to the L1 GhostPortal.
    */
   encodeDepositL1ToL2(opts: DepositOptions): {
@@ -127,14 +135,15 @@ export class GhostBridgeClient {
   // ── L2 → L1 withdrawal ───────────────────────────────────────────────────
 
   /**
-   * Encode an L2StandardBridge withdrawal initiation calldata.
-   * The sender must broadcast this via their own signer to the L2 bridge predeploy.
+   * Encode an L2 -> L1 compatibility withdrawal initiation calldata.
+   * The sender must broadcast this via their own signer to the configured L2 relay / bridge address.
    */
   encodeWithdrawL2ToL1(opts: WithdrawOptions): {
     to: `0x${string}`;
     data: `0x${string}`;
     value: bigint;
   } {
+    const bridgeAddress = this.requireAddress(this.l2BridgeAddress, "l2BridgeAddress", "L2_TO_L1_GATEWAY_ADDRESS");
     const target = opts.to ?? ("0x0000000000000000000000000000000000000000" as `0x${string}`);
     const minGasLimit = opts.gasLimit ?? 200_000n;
 
@@ -143,7 +152,7 @@ export class GhostBridgeClient {
     const encoded = this._encodeWithdrawETH(target, opts.value, minGasLimit);
 
     return {
-      to: this.l2BridgeAddress,
+      to: bridgeAddress,
       data: encoded,
       value: opts.value,
     };
@@ -156,14 +165,12 @@ export class GhostBridgeClient {
     data: `0x${string}`;
     value: bigint;
   } {
-    if (!this.l3BridgeAddress) {
-      throw new Error("L3 bridge address not configured");
-    }
+    const bridgeAddress = this.requireAddress(this.l3BridgeAddress, "l3BridgeAddress", "BRIDGE_L2L3_ADDRESS");
     const target = opts.to ?? ("0x0000000000000000000000000000000000000000" as `0x${string}`);
     const gasLimit = opts.gasLimit ?? 100_000n;
     const encoded = this._encodeDepositTransaction(target, opts.value, gasLimit, false, opts.data ?? "0x");
     return {
-      to: this.l3BridgeAddress,
+      to: bridgeAddress,
       data: encoded,
       value: opts.value,
     };
@@ -223,4 +230,21 @@ export class GhostBridgeClient {
 
     return `0x${selector}${toHex}${gasLimitHex}${dataOffset}${dataLen}` as `0x${string}`;
   }
+
+  private requireAddress(
+    address: `0x${string}` | undefined,
+    configKey: string,
+    envKey: string,
+  ): `0x${string}` {
+    if (!address) {
+      throw new Error(`GhostBridgeClient: ${configKey} is required; set BridgeConfig.${configKey} or ${envKey}`);
+    }
+    return address;
+  }
+}
+
+function normalizeOptionalAddress(value: string | undefined): `0x${string}` | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  return trimmed ? trimmed as `0x${string}` : undefined;
 }

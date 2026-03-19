@@ -1,5 +1,5 @@
 /**
- * ghostl3.ts — GhostL3 OP Stack specific service client.
+ * ghostl3.ts — GhostL3 service client.
  *
  * GhostL3 (chain_id=903, RPC :39545) is app-specific execution anchored to
  * GhostL2.  L3 never calls L1 directly — all cross-chain traffic goes via L2.

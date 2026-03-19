@@ -1,0 +1,19 @@
+services:
+  ghost-bridge:
+    build:
+      context: ../..
+      dockerfile: services/ghost-bridge/Dockerfile
+    env_file: .env.example
+    ports:
+      - "7264:7264"
+    volumes:
+      - ghost-bridge-state:/state
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "healthcheck.sh"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  ghost-bridge-state:

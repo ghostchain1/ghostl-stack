@@ -9,7 +9,7 @@
  * All state updates use ghost_sendRawTransaction; reads use ghost_call.
  */
 
-const L3_RPC = 'http://localhost:39545';
+const L3_RPC = 'http://localhost:7270';
 
 export interface PlayerState {
   address:    string;
@@ -248,6 +248,6 @@ export class Multiplayer {
   }
 
   static devnet(): Multiplayer {
-    return new Multiplayer('http://localhost:39545');
+    return new Multiplayer('http://localhost:7270');
   }
 }

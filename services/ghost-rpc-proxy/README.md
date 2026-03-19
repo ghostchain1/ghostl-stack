@@ -1,31 +1,36 @@
 # ghost-rpc-proxy
 
-`ghost-rpc-proxy` is a JSON-RPC proxy that sits in front of an upstream execution client (e.g., geth/op-geth).
+`ghost-rpc-proxy` is a JSON-RPC proxy that sits in front of an upstream execution or rollup RPC endpoint.
 
-## gst_* namespace (canonical)
+## Ghost Namespaces
 
-GhostChain exposes `gst_*` methods as the **canonical** namespace.
+GhostChain exposes `ghost_*` methods as the canonical public namespace.
 
-- External compatibility: `eth_*` still works.
-- Upstream client compatibility: upstream only implements `eth_*` today, so the proxy rewrites `gst_*` → `eth_*` when forwarding upstream.
-- Observability: when `eth_*` is used and a `gst_*` canonical method exists, the proxy emits `rpc_alias_used` events and metrics (opt-in audit sink supported).
+- Execution RPC compatibility: `gst_*` and `eth_*` still work as aliases for execution methods.
+- Rollup RPC compatibility: `ghost_compat_*` is the explicit compatibility surface for OP-era rollup methods, and the proxy rewrites those calls to upstream `optimism_*`.
+- Legacy rollup aliases: `ghost_syncStatus` and raw `optimism_*` are still accepted as aliases and are canonicalized to `ghost_compat_*` at the proxy edge.
+- Observability: when a legacy alias is used, the proxy emits `rpc_alias_used` events and metrics (opt-in audit sink supported).
 
 ### Controls (env vars)
 
-- `RPC_ENABLE_GST_NAMESPACE=1` (default): enable namespace remaps and alias logging
+- `RPC_ENABLE_GST_NAMESPACE=1` (default): enable execution-namespace remaps and alias logging
 - `RPC_DEPRECATE_LEGACY_NAMESPACE=1`: set `x-ghost-rpc-warning` header on requests that include legacy `eth_*` methods (alias supported for backward compatibility)
-- `RPC_REJECT_LEGACY_NAMESPACE=1`: hard-reject legacy `eth_*` aliases when a canonical `gst_*` exists (do **not** enable until all internal callers migrated)
+- `RPC_REJECT_LEGACY_NAMESPACE=1`: hard-reject legacy `eth_*` aliases when a canonical `ghost_*` method exists (do **not** enable until all internal callers migrated)
 
 ## Supported canonical remaps
 
 The proxy currently canonicalizes (non-exhaustive):
 
-- `eth_blockNumber` → `gst_blockNumber`
-- `eth_chainId` → `gst_chainId`
-- `eth_getBalance` → `gst_getBalance`
-- `eth_call` → `gst_call`
-- `eth_estimateGas` → `gst_estimateGas`
-- `eth_gasPrice` → `gst_gasPrice`
-- `eth_feeHistory` → `gst_feeHistory`
+- `eth_blockNumber` → `ghost_blockNumber`
+- `eth_chainId` → `ghost_chainId`
+- `eth_getBalance` → `ghost_getBalance`
+- `eth_call` → `ghost_call`
+- `eth_estimateGas` → `ghost_estimateGas`
+- `eth_gasPrice` → `ghost_gasPrice`
+- `eth_feeHistory` → `ghost_feeHistory`
+- `ghost_compat_syncStatus` → `optimism_syncStatus`
+- `ghost_compat_outputAtBlock` → `optimism_outputAtBlock`
+- `ghost_compat_rollupConfig` → `optimism_rollupConfig`
+- `ghost_compat_safeHeadAtL1Block` → `optimism_safeHeadAtL1Block`
 
-If you need additional `gst_*` coverage, extend the maps in `services/ghost-rpc-proxy/index.mjs`.
+If you need additional `ghost_*` or `ghost_compat_*` coverage, extend the maps in `services/ghost-rpc-proxy/index.mjs`.

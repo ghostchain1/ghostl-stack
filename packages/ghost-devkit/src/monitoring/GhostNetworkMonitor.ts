@@ -24,8 +24,8 @@ export class GhostNetworkMonitor {
     const cfg = await ConfigLoader.loadFrom();
     const [l1, l2, l3] = await Promise.all([
       this.probeLayer(cfg.rpc.l1 ?? "http://127.0.0.1:18545"),
-      this.probeLayer(cfg.rpc.l2 ?? "http://127.0.0.1:29547"),
-      this.probeLayer(cfg.rpc.l3 ?? "http://127.0.0.1:39545"),
+      this.probeLayer(cfg.rpc.l2 ?? "http://127.0.0.1:7260"),
+      this.probeLayer(cfg.rpc.l3 ?? "http://127.0.0.1:7270"),
     ]);
     const timestamp = new Date().toISOString();
     log.info(`L1=${l1.online ? "online" : "offline"} L2=${l2.online ? "online" : "offline"} L3=${l3.online ? "online" : "offline"}`);

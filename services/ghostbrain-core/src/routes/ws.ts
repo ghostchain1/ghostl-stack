@@ -14,6 +14,7 @@
 import { WebSocketServer, WebSocket } from "ws";
 import type { IncomingMessage, Server } from "http";
 import { randomUUID } from "crypto";
+import { decideGhostRoute } from "../core/routeDecision.js";
 
 // ── Types mirrored from @ghost/ai-sdk (no import — avoid circular dep) ──────
 
@@ -57,23 +58,7 @@ async function handleMessage(msg: GhostWsMessage): Promise<any> {
   switch (msg.topic) {
 
     case "ghost.route.decide": {
-      const { from, to, intent } = msg.payload ?? {};
-
-      // Enforce single-hop policy: L3→L2 or L2→L1 only
-      const hop: Record<string, string> = { L3: "L2", L2: "L1", L1: "L1" };
-      const executeOn = hop[from as string] ?? "L1";
-      const requiresMessaging = from !== to;
-
-      return {
-        plan: {
-          path:              from !== to ? [from, executeOn] : [executeOn],
-          executeOn,
-          requiresMessaging,
-          reason:            intent ?? "ghost-routing-law",
-        },
-        riskScore: 0.05,
-        notes:     ["Routed by GhostBrain deterministic policy"],
-      };
+      return decideGhostRoute(msg.payload ?? {});
     }
 
     case "ghost.swarm.heartbeat": {

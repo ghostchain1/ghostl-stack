@@ -19,7 +19,7 @@ export class GhostCastAdapter {
 
   static async create(): Promise<GhostCastAdapter> {
     const cfg = await ConfigLoader.loadFrom();
-    return new GhostCastAdapter(cfg.rpc.l2 ?? "http://127.0.0.1:29547");
+    return new GhostCastAdapter(cfg.rpc.l2 ?? "http://127.0.0.1:7260");
   }
 
   /** eth_call a view function */

@@ -18,8 +18,8 @@ services:
       PORT: 8088
       NET_ENV: ${NET_ENV:-dev}
       RPC_L1: ${AUTONOMY_RPC_L1:-http://ghostchain-rpc-proxy:8545}
-      RPC_L2: ${AUTONOMY_RPC_L2:-http://l2-geth:8545}
-      RPC_L3: ${AUTONOMY_RPC_L3:-http://l3-geth:8545}
+      RPC_L2: ${AUTONOMY_RPC_L2:-http://ghost-exec-l2:7260}
+      RPC_L3: ${AUTONOMY_RPC_L3:-http://ghost-exec-l3:7270}
       RPC_L1_WS: ${RPC_L1_WS:-}
       RPC_L2_WS: ${RPC_L2_WS:-}
       RPC_L3_WS: ${RPC_L3_WS:-}
@@ -116,10 +116,10 @@ services:
       NET_ENV: ${NET_ENV:-dev}
       RPC_REGISTRY_URL: http://ghost-registry:8088/v1/endpoints
       RPC_L1: ${AUTONOMY_RPC_L1:-http://ghostchain-rpc-proxy:8545}
-      RPC_L2: ${AUTONOMY_RPC_L2:-http://l2-geth:8545}
-      RPC_L3: ${AUTONOMY_RPC_L3:-http://l3-geth:8545}
-      OP_NODE_L2_RPC: ${AUTONOMY_OP_NODE_L2_RPC:-http://op-node:9546}
-      OP_NODE_L3_RPC: ${AUTONOMY_OP_NODE_L3_RPC:-http://l3-op-node:19546}
+      RPC_L2: ${AUTONOMY_RPC_L2:-http://ghost-exec-l2:7260}
+      RPC_L3: ${AUTONOMY_RPC_L3:-http://ghost-exec-l3:7270}
+      OP_NODE_L2_RPC: ${AUTONOMY_OP_NODE_L2_RPC:-http://ghost-sequencer-l2:7261}
+      OP_NODE_L3_RPC: ${AUTONOMY_OP_NODE_L3_RPC:-http://ghost-sequencer-l3:7271}
       EVIDENCE_DIR: /data/evidence
       PROPOSAL_DIR: /data/proposals
       FINALITY_STATE_PATH: /data/finality-state.json
@@ -177,8 +177,8 @@ services:
       CONSENSUS_TELEMETRY_URL: http://consensus-telemetry-service:7635/consensus
       MONITOR_HOST: ${MONITOR_HOST:-host.docker.internal}
       MONITOR_RPC_L1: ${AUTONOMY_RPC_L1:-http://ghostchain-rpc-proxy:8545}
-      MONITOR_RPC_L2: ${AUTONOMY_RPC_L2:-http://l2-geth:8545}
-      MONITOR_RPC_L3: ${AUTONOMY_RPC_L3:-http://l3-geth:8545}
+      MONITOR_RPC_L2: ${AUTONOMY_RPC_L2:-http://ghost-exec-l2:7260}
+      MONITOR_RPC_L3: ${AUTONOMY_RPC_L3:-http://ghost-exec-l3:7270}
       MONITOR_PORTS: ${MONITOR_PORTS:-}
       MONITOR_HEALTH_ENDPOINTS: ${MONITOR_HEALTH_ENDPOINTS:-}
       MONITOR_INTERVAL_MS: ${MONITOR_INTERVAL_MS:-10000}

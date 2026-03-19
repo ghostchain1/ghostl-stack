@@ -190,7 +190,7 @@ services:
       - l3_net
       - shared_obs
     environment:
-      L3_L1_RPC: "${L3_L1_RPC:-http://l2-geth:8545}"
+      L3_L1_RPC: "${L3_L1_RPC:-http://ghost-exec-l2:7260}"
 
   l3-op-batcher:
     <<: *default-restart

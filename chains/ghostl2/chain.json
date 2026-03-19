@@ -1,0 +1,44 @@
+{
+  "name": "GhostL2",
+  "layer": "L2",
+  "parentLayer": "L1",
+  "chainId": 901,
+  "parentChainId": 14000101,
+  "rpcUrl": "${GHOST_L2_RPC_URL:-http://ghostl2:8545}",
+  "wsUrl": "${GHOST_L2_WS_URL:-ws://ghostl2:8546}",
+  "blockExplorer": "${GHOST_L2_EXPLORER_URL:-http://ghostscout-l2:4000}",
+  "nativeCurrency": {
+    "name": "Ghost",
+    "symbol": "GST",
+    "decimals": 18
+  },
+  "stack": "ghost-custom",
+  "stackVersion": "1.0.0",
+  "sequencer": {
+    "address": "${GHOST_L2_SEQUENCER_ADDRESS}",
+    "endpoint": "${GHOST_L2_SEQUENCER_URL:-http://ghost-sequencer:7261}"
+  },
+  "settlement": {
+    "rollupAddress": "0xad32D5C2Da9f4159C4cc98686C005852b3905355",
+    "finalityOracle": "0x7B3Be2dDDdDf9A0a3fE1DC57B98980F662C3a422",
+    "endpoint": "${GHOST_SETTLEMENT_URL:-http://ghost-settlement:7263}"
+  },
+  "bridge": {
+    "inboxAddress": "${GHOST_L2_INBOX_ADDRESS}",
+    "outboxAddress": "${GHOST_L2_OUTBOX_ADDRESS}",
+    "endpoint": "${GHOST_BRIDGE_URL:-http://ghost-bridge:7264}"
+  },
+  "proof": {
+    "mode": "fraud",
+    "endpoint": "${GHOST_PROOF_URL:-http://ghost-proof:7265}"
+  },
+  "blockTimeSeconds": 2,
+  "maxBlockGas": 30000000,
+  "baseFeeScalar": 1000,
+  "blobBaseFeeScalar": 1000,
+  "routing": {
+    "allowedParents": [14000101],
+    "allowedChildren": [903],
+    "policy": "L3->L2->L1"
+  }
+}

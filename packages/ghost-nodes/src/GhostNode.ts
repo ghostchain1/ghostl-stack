@@ -23,6 +23,7 @@ import {
 } from "./types.js";
 
 import { GhostRPCClient } from "./rpc/GhostRPCClient.js";
+import { GhostRPCCompatMethod } from "./rpc/GhostRPCMethod.js";
 
 // ─── Base GhostNode ───────────────────────────────────────────────────────────
 
@@ -204,8 +205,9 @@ export class GhostL1Node extends GhostNode {
 }
 
 /**
- * GhostL2Node — a node on GhostL2 (chainId 901, OP Stack settling to L1).
- * L2 nodes run the op-node sequencer and l2-geth execution engine.
+ * GhostL2Node — a node on GhostL2 (chainId 901).
+ * During migration, L2 may still expose legacy rollup-compat telemetry via the
+ * Ghost compat RPC boundary.
  */
 export class GhostL2Node extends GhostNode {
   static readonly CHAIN_ID   = 901;
@@ -216,22 +218,33 @@ export class GhostL2Node extends GhostNode {
     super({ ...config, layer: GhostNodeLayer.L2, chainId: config.chainId ?? GhostL2Node.CHAIN_ID });
   }
 
-  /** Returns the L2 output root at the given index. */
-  async getGhostOutputRoot(outputIndex: bigint): Promise<string> {
-    return this._rpc.call<string>("ghost_outputAtBlock", [
+  /** Returns the L2 output root via the explicit rollup-compat boundary. */
+  async getGhostCompatOutputRoot(outputIndex: bigint): Promise<string> {
+    return this._rpc.callCompat<string>(GhostRPCCompatMethod.getOutputAtBlock, [
       `0x${outputIndex.toString(16)}`
     ]);
   }
 
-  /** Returns the sync status of the L2 sequencer. */
+  /** Returns the sync status via the explicit rollup-compat boundary. */
+  async getGhostCompatSyncStatus(): Promise<Record<string, unknown>> {
+    return this._rpc.callCompat<Record<string, unknown>>(GhostRPCCompatMethod.getSyncStatus, []);
+  }
+
+  /** @deprecated Use getGhostCompatOutputRoot() while the rollup compat path exists. */
+  async getGhostOutputRoot(outputIndex: bigint): Promise<string> {
+    return this.getGhostCompatOutputRoot(outputIndex);
+  }
+
+  /** @deprecated Use getGhostCompatSyncStatus() while the rollup compat path exists. */
   async getGhostSyncStatus(): Promise<Record<string, unknown>> {
-    return this._rpc.call<Record<string, unknown>>("ghost_syncStatus", []);
+    return this.getGhostCompatSyncStatus();
   }
 }
 
 /**
- * GhostL3Node — a node on GhostL3 (chainId 903, OP Stack settling to L2).
- * L3 nodes run application-layer transactions and batch to GhostL2.
+ * GhostL3Node — a node on GhostL3 (chainId 903).
+ * During migration, L3 may still expose legacy rollup-compat telemetry via the
+ * Ghost compat RPC boundary.
  */
 export class GhostL3Node extends GhostNode {
   static readonly CHAIN_ID   = 903;
@@ -242,9 +255,14 @@ export class GhostL3Node extends GhostNode {
     super({ ...config, layer: GhostNodeLayer.L3, chainId: config.chainId ?? GhostL3Node.CHAIN_ID });
   }
 
-  /** Returns the L3 sync status. */
+  /** Returns the L3 sync status via the explicit rollup-compat boundary. */
+  async getGhostCompatSyncStatus(): Promise<Record<string, unknown>> {
+    return this._rpc.callCompat<Record<string, unknown>>(GhostRPCCompatMethod.getSyncStatus, []);
+  }
+
+  /** @deprecated Use getGhostCompatSyncStatus() while the rollup compat path exists. */
   async getGhostSyncStatus(): Promise<Record<string, unknown>> {
-    return this._rpc.call<Record<string, unknown>>("ghost_syncStatus", []);
+    return this.getGhostCompatSyncStatus();
   }
 }
 
@@ -334,7 +352,7 @@ export const GHOST_FLEET: readonly GhostFleetNode[] = Object.freeze([
     layer:       GhostNodeLayer.L2,
     role:        GhostNodeRole.Sequencer,
     chainId:     GhostL2Node.CHAIN_ID,
-    rpcUrl:      "http://10.50.99.76:29547",
+    rpcUrl:      "http://10.50.99.76:7260",
     wsRpcUrl:    "ws://10.50.99.76:29546",
     managementIp: "10.50.99.76",
     isMainnet:   true,
@@ -347,7 +365,7 @@ export const GHOST_FLEET: readonly GhostFleetNode[] = Object.freeze([
     layer:       GhostNodeLayer.L2,
     role:        GhostNodeRole.Sequencer,
     chainId:     GhostL2Node.CHAIN_ID,
-    rpcUrl:      "http://10.50.99.77:29547",
+    rpcUrl:      "http://10.50.99.77:7260",
     managementIp: "10.50.99.77",
     isMainnet:   false,
   },
@@ -358,7 +376,7 @@ export const GHOST_FLEET: readonly GhostFleetNode[] = Object.freeze([
     layer:       GhostNodeLayer.L3,
     role:        GhostNodeRole.Sequencer,
     chainId:     GhostL3Node.CHAIN_ID,
-    rpcUrl:      "http://10.50.99.78:39545",
+    rpcUrl:      "http://10.50.99.78:7270",
     wsRpcUrl:    "ws://10.50.99.78:39546",
     managementIp: "10.50.99.78",
     isMainnet:   true,
@@ -371,7 +389,7 @@ export const GHOST_FLEET: readonly GhostFleetNode[] = Object.freeze([
     layer:       GhostNodeLayer.L3,
     role:        GhostNodeRole.Sequencer,
     chainId:     GhostL3Node.CHAIN_ID,
-    rpcUrl:      "http://10.50.99.79:39545",
+    rpcUrl:      "http://10.50.99.79:7270",
     managementIp: "10.50.99.79",
     isMainnet:   false,
   },

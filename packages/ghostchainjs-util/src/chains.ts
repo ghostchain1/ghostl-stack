@@ -63,22 +63,22 @@ export const GHOST_CHAIN_NAMES: Record<GhostChainId, string> = {
 /** Devnet RPC endpoints (all chains run locally on the devnet controller). */
 export const GHOST_DEVNET_RPC: Record<GhostChainId, string> = {
   [GhostChainId.L1]: "http://localhost:18545",
-  [GhostChainId.L2]: "http://localhost:29547",
-  [GhostChainId.L3]: "http://localhost:39545",
+  [GhostChainId.L2]: "http://localhost:7260",
+  [GhostChainId.L3]: "http://localhost:7270",
 };
 
 /** Testnet RPC endpoints */
 export const GHOST_TESTNET_RPC: Record<GhostChainId, string> = {
   [GhostChainId.L1]: "http://10.50.99.71:18545",
-  [GhostChainId.L2]: "http://10.50.99.77:29547",
-  [GhostChainId.L3]: "http://10.50.99.79:39545",
+  [GhostChainId.L2]: "http://10.50.99.77:7260",
+  [GhostChainId.L3]: "http://10.50.99.79:7270",
 };
 
 /** Mainnet RPC endpoints */
 export const GHOST_MAINNET_RPC: Record<GhostChainId, string> = {
   [GhostChainId.L1]: "http://10.50.99.70:18545",
-  [GhostChainId.L2]: "http://10.50.99.76:29547",
-  [GhostChainId.L3]: "http://10.50.99.78:39545",
+  [GhostChainId.L2]: "http://10.50.99.76:7260",
+  [GhostChainId.L3]: "http://10.50.99.78:7270",
 };
 
 // ─── GhostChainConfig presets ─────────────────────────────────────────────────

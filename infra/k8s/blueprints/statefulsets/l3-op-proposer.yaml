@@ -39,7 +39,7 @@
             "command": null,
             "args": [
               "op-proposer",
-              "--l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}",
+              "--l1-eth-rpc=${L3_L1_RPC:-http://ghost-exec-l2:7260}",
               "--rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
               "--game-factory-address=${L3_GAME_FACTORY_ADDRESS:-0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0}",
               "--proposal-interval=30s",

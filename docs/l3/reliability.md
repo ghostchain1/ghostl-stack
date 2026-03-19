@@ -42,5 +42,5 @@ The doctor checks surface warnings when metrics endpoints are missing. Ensure th
 To validate Phase 3 in practice, restart any one of `l3-op-node`, `l3-op-batcher`, or `l3-op-proposer`, then confirm:
 
 - `doctor-l3.sh` reports chain ID alignment + parent derivation within thresholds
-- Rollup RPC responds to `optimism_syncStatus`
+- Rollup RPC proxy responds to `ghost_compat_syncStatus`
 - L3 shows block height progress over time when `L3_REQUIRE_L3_PROGRESS=1`

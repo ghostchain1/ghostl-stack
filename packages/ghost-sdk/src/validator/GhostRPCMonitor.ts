@@ -28,7 +28,7 @@ export interface RpcHealthResult {
 export interface RpcMonitorConfig {
   /** Request timeout in milliseconds. Default: 5000 */
   timeoutMs?: number;
-  /** JSON-RPC method to call. Default: "eth_blockNumber" */
+  /** JSON-RPC method to call. Default: "ghost_blockNumber" */
   method?: string;
   /** Custom request params. Default: [] */
   params?: unknown[];
@@ -43,7 +43,7 @@ export class GhostRPCMonitor {
 
   constructor(config: RpcMonitorConfig = {}) {
     this.timeoutMs = config.timeoutMs ?? 5_000;
-    this.method    = config.method    ?? "eth_blockNumber";
+    this.method    = config.method    ?? "ghost_blockNumber";
     this.params    = config.params    ?? [];
   }
 

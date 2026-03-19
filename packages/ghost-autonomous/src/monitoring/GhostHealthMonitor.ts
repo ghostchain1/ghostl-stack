@@ -10,8 +10,8 @@ export interface HealthStatus {
 }
 
 const ENDPOINTS = {
-  rpc:        process.env["L2_RPC_URL"]     ?? "http://127.0.0.1:29547",
-  validator:  process.env["L2_RPC_URL"]     ?? "http://127.0.0.1:29547",
+  rpc:        process.env["L2_RPC_URL"]     ?? "http://127.0.0.1:7260",
+  validator:  process.env["L2_RPC_URL"]     ?? "http://127.0.0.1:7260",
   bridge:     process.env["BRIDGE_API_URL"] ?? "http://127.0.0.1:8545",
 };
 

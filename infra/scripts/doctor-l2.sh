@@ -76,8 +76,8 @@ L2_DEPLOYMENTS_JSON="${L2_DEPLOYMENTS_JSON:-$L2_CONFIG_DIR/l2-deployments.json}"
 
 HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
-OP_NODE_RPC="${OP_NODE_RPC:-http://localhost:9546}"
-OP_SEQUENCER_RPC="${OP_SEQUENCER_RPC:-http://localhost:9646}"
+OP_NODE_RPC="${OP_NODE_RPC:-http://localhost:${L2_OP_NODE_RPC_PORT:-${OP_NODE_PROXY_HOST_PORT:-29546}}}"
+OP_SEQUENCER_RPC="${OP_SEQUENCER_RPC:-http://localhost:${L2_SEQUENCER_RPC_PORT:-${OP_SEQUENCER_PROXY_HOST_PORT:-29646}}}"
 
 L2_GETH_METRICS_URL="${L2_GETH_METRICS_URL:-http://localhost:29606/debug/metrics/prometheus}"
 OP_NODE_METRICS_URL="${OP_NODE_METRICS_URL:-http://localhost:7300/metrics}"
@@ -182,6 +182,11 @@ jsonrpc_params() {
   local params="$3"
   curl -fsS -X POST "$url" -H 'content-type: application/json' \
     --data "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"${method}\",\"params\":${params}}" || return 1
+}
+
+rollup_sync_status() {
+  local url="$1"
+  jsonrpc "$url" "ghost_compat_syncStatus"
 }
 
 json_result() {
@@ -660,17 +665,17 @@ else
   warn "rollup.json genesis.l2.hash not set"
 fi
 
-if ! jsonrpc "$OP_NODE_RPC" "optimism_syncStatus" >/dev/null 2>&1; then
+if ! rollup_sync_status "$OP_NODE_RPC" >/dev/null 2>&1; then
   fail "op-node RPC not reachable at $OP_NODE_RPC"
 fi
-if ! jsonrpc "$OP_SEQUENCER_RPC" "optimism_syncStatus" >/dev/null 2>&1; then
+if ! rollup_sync_status "$OP_SEQUENCER_RPC" >/dev/null 2>&1; then
   fail "op-sequencer RPC not reachable at $OP_SEQUENCER_RPC"
 fi
 
 echo "OK: op-node/op-sequencer RPC reachable"
 
-SYNC_RAW="$(jsonrpc "$OP_NODE_RPC" "optimism_syncStatus" || true)"
-SEQ_SYNC_RAW="$(jsonrpc "$OP_SEQUENCER_RPC" "optimism_syncStatus" || true)"
+SYNC_RAW="$(rollup_sync_status "$OP_NODE_RPC" || true)"
+SEQ_SYNC_RAW="$(rollup_sync_status "$OP_SEQUENCER_RPC" || true)"
 
 # If the sequencer is stopped, L2 can accept txs into the txpool but will not produce new blocks.
 # This breaks E2E bridging and any progress-gated environments.
@@ -796,9 +801,9 @@ if [ "$SYNC_HEAD_L1_NUM" -gt 0 ]; then
     fi
   else
     if [ "$L2_REQUIRE_L2_PROGRESS" = "1" ]; then
-      # Some stacks report zeros for optimism_syncStatus while execution blocks are advancing.
+      # Some stacks report zeros for rollup sync status while execution blocks are advancing.
       # For progress gating, we rely on eth_blockNumber delta (checked earlier).
-      warn "optimism_syncStatus reports unsafe_l2=0; skipping derivation/safe-lag checks"
+      warn "rollup sync status reports unsafe_l2=0; skipping derivation/safe-lag checks"
     fi
     echo "OK: derivation/safe-lag checks skipped (insufficient syncStatus data)"
   fi

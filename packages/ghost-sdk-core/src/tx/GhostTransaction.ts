@@ -122,15 +122,15 @@ function _stripLeadingZeros(bytes: Uint8Array): Uint8Array {
 // ─── Per-layer factory helpers ────────────────────────────────────────────────
 
 export function makeL1Transaction(fields: Partial<GhostTransaction>): GhostTransaction {
-  return _make(31337, fields);
+  return _make(14000101, fields);
 }
 
 export function makeL2Transaction(fields: Partial<GhostTransaction>): GhostTransaction {
-  return _make(42069, fields);
+  return _make(901, fields);
 }
 
 export function makeL3Transaction(fields: Partial<GhostTransaction>): GhostTransaction {
-  return _make(43069, fields);
+  return _make(903, fields);
 }
 
 function _make(chainId: number, fields: Partial<GhostTransaction>): GhostTransaction {

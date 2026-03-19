@@ -14,7 +14,7 @@ import { getDb } from '../backend/src/db/index.js';
 // ── Chain constants ───────────────────────────────────────────────────────────
 
 const L3_CHAIN_ID = 903;
-const L3_RPC      = process.env['GHOST_L3_RPC']      ?? 'http://localhost:39545';
+const L3_RPC      = process.env['GHOST_L3_RPC']      ?? 'http://localhost:7270';
 const GST_ADDRESS = process.env['GST_CONTRACT_L3']   ?? '0x5FbDB2315678afecb367f032d93F642f64180aa3';
 
 // ── Types ─────────────────────────────────────────────────────────────────────

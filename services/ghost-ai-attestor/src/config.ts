@@ -26,8 +26,8 @@ export type AttestorConfig = {
 
 const DEFAULT_RPC_URLS: Record<GhostLayer, string> = {
   1: "http://localhost:18545",
-  2: "http://localhost:29547",
-  3: "http://localhost:39545"
+  2: "http://localhost:7260",
+  3: "http://localhost:7270"
 };
 
 const toPositiveInt = (raw: string | undefined, fallback: number): number => {

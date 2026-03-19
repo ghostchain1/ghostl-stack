@@ -157,13 +157,13 @@ This checklist is **safe by default** (no transactions) unless a step is explici
   - **Likely fails:** `Dev secrets blocked`; **sequencer stopped** (`admin_sequencerActive=false`); L2 execution not progressing when `L2_REQUIRE_L2_PROGRESS=1` (delta-based check); op-node RPC unreachable (`OP_NODE_RPC`); L1 derivation lag too high; batcher/proposer idle past thresholds.
   - **Debug:**
     ```bash
-    curl -fsS http://localhost:9546 -H 'content-type: application/json' \
-      -d '{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}' | head -c 200; echo
-    curl -fsS http://localhost:9646 -H 'content-type: application/json' \
+    curl -fsS http://localhost:29546 -H 'content-type: application/json' \
+      -d '{"jsonrpc":"2.0","id":1,"method":"ghost_compat_syncStatus","params":[]}' | head -c 200; echo
+    curl -fsS http://localhost:29646 -H 'content-type: application/json' \
       -d '{"jsonrpc":"2.0","id":1,"method":"admin_sequencerActive","params":[]}'
-    UNSAFE_HEAD_HASH="$(curl -fsS http://localhost:9646 -H 'content-type: application/json' \
-      -d '{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}' | jq -r '.result.unsafe_l2.hash')"
-    curl -fsS http://localhost:9646 -H 'content-type: application/json' \
+    UNSAFE_HEAD_HASH="$(curl -fsS http://localhost:29646 -H 'content-type: application/json' \
+      -d '{"jsonrpc":"2.0","id":1,"method":"ghost_compat_syncStatus","params":[]}' | jq -r '.result.unsafe_l2.hash')"
+    curl -fsS http://localhost:29646 -H 'content-type: application/json' \
       -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"admin_startSequencer\",\"params\":[\"${UNSAFE_HEAD_HASH}\"]}"
     curl -fsS http://localhost:7300/metrics | head -n 5
     curl -fsS http://localhost:7301/metrics | head -n 5
@@ -198,7 +198,7 @@ This checklist is **safe by default** (no transactions) unless a step is explici
   - **Debug:**
     ```bash
     curl -fsS http://localhost:39546 -H 'content-type: application/json' \
-      -d '{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}' | head -c 200; echo
+      -d '{"jsonrpc":"2.0","id":1,"method":"ghost_compat_syncStatus","params":[]}' | head -c 200; echo
     curl -fsS http://localhost:39545 -H 'content-type: application/json' \
       -d '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}'
     docker compose -f infra/opstack/docker-compose.l3.yml ps
@@ -479,8 +479,8 @@ This checklist is **safe by default** (no transactions) unless a step is explici
   - In staging/prod, gates call doctors with `L2_REQUIRE_L2_PROGRESS=1` / `L3_REQUIRE_L3_PROGRESS=1`.
   - Check rollup sync status:
     ```bash
-    curl -fsS http://localhost:9546 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}' | head -c 200; echo
-    curl -fsS http://localhost:39546 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}' | head -c 200; echo
+    curl -fsS http://localhost:29546 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"ghost_compat_syncStatus","params":[]}' | head -c 200; echo
+    curl -fsS http://localhost:39546 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"ghost_compat_syncStatus","params":[]}' | head -c 200; echo
     ```
 
 - **Relayer observe-only**
@@ -506,7 +506,7 @@ Below is a prioritized roadmap. Each item includes acceptance criteria and sugge
 - **Where:** `infra/scripts/doctor-l2.sh`, `infra/scripts/doctor-l3.sh`, plus any automation that claims “up” status (e.g., `infra/scripts/doctor.sh`).
 - **Acceptance criteria:**
   - A stalled chain (no new blocks over a window) fails when `*_REQUIRE_*_PROGRESS=1`.
-  - A healthy chain passes even if `optimism_syncStatus` temporarily omits fields (use fallback signals).
+  - A healthy chain passes even if `ghost_compat_syncStatus` temporarily omits fields (use fallback signals).
 
 ## 2) Update `doctor-l2.sh` + `doctor-l3.sh` progress to use `eth_blockNumber` delta over time
 
@@ -515,7 +515,7 @@ Below is a prioritized roadmap. Each item includes acceptance criteria and sugge
 - **Current implementation (recommended):**
   - When `L2_REQUIRE_L2_PROGRESS=1`, `doctor-l2.sh` samples `eth_blockNumber` twice and fails if `delta < L2_PROGRESS_MIN_DELTA` over `L2_PROGRESS_SAMPLE_SECONDS`.
   - When `L3_REQUIRE_L3_PROGRESS=1`, `doctor-l3.sh` does the same with `L3_PROGRESS_*` knobs.
-  - If `optimism_syncStatus` reports zeros while execution advances, doctors warn and skip derivation/safe-lag checks (progress gating still relies on `eth_blockNumber` delta).
+  - If `ghost_compat_syncStatus` reports zeros while execution advances, doctors warn and skip derivation/safe-lag checks (progress gating still relies on `eth_blockNumber` delta).
 - **Acceptance criteria:**
   - With block production paused, doctors fail within ~30–60s.
   - With block production enabled, doctors pass and report the observed delta.

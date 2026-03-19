@@ -124,6 +124,7 @@
     "build:api": "npm run build -w apps/api",
     "build:web": "npm run build -w apps/web",
     "build:services": "./scripts/build-services-sequential.sh services/docker-compose.yml",
+    "check:custom-runtime": "npm --prefix services/ghost-exec run check && npm --prefix services/ghost-sequencer run check && npm --prefix services/ghost-deriver run check && npm --prefix services/ghost-settlement run check && npm --prefix services/ghost-bridge run check && npm --prefix services/ghost-proof run check && npm --prefix services/ghost-observability run check",
     "configure:build:ready": "bash infra/scripts/production/configure-build-ready.sh --mode=production --secrets=vault",
     "configure:build:ready:op-only": "bash infra/scripts/production/configure-build-ready.sh --mode=production --secrets=vault --allow-finality-fallback",
     "configure:build:staging": "bash infra/scripts/production/configure-build-ready.sh --mode=staging --secrets=vault",

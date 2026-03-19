@@ -6,8 +6,8 @@
  *
  * Chain topology:
  *   L1  chain_id 14000101  RPC :18545  gas token GST
- *   L2  chain_id 901       RPC :29547
- *   L3  chain_id 903       RPC :39545
+ *   L2  chain_id 901       RPC :7260
+ *   L3  chain_id 903       RPC :7270
  *   GhostBrain Core        :7900
  *
  * Security: API key is stored exclusively in VS Code SecretStorage —
@@ -58,8 +58,8 @@ const SECRET_KEY = 'ghostbrain.apiKey';
 
 const CHAIN_LAYERS = [
   { label: 'GhostChain L1', chainId: 14000101, configKey: 'l1RpcUrl', defaultUrl: 'http://localhost:18545' },
-  { label: 'GhostL2',       chainId: 901,       configKey: 'l2RpcUrl', defaultUrl: 'http://localhost:29547' },
-  { label: 'GhostL3',       chainId: 903,       configKey: 'l3RpcUrl', defaultUrl: 'http://localhost:39545' },
+  { label: 'GhostL2',       chainId: 901,       configKey: 'l2RpcUrl', defaultUrl: 'http://localhost:7260' },
+  { label: 'GhostL3',       chainId: 903,       configKey: 'l3RpcUrl', defaultUrl: 'http://localhost:7270' },
 ] as const;
 
 // Bridge and validator file patterns to scan in the workspace

@@ -6,7 +6,7 @@
  * L3 → L2 → L1 — this engine never calls L1 directly.
  */
 
-const L3_RPC = 'http://localhost:39545';
+const L3_RPC = 'http://localhost:7270';
 
 export interface GhostWorldConfig {
   name:         string;
@@ -214,6 +214,6 @@ export class WorldEngine {
   }
 
   static devnet(): WorldEngine {
-    return new WorldEngine('http://localhost:39545');
+    return new WorldEngine('http://localhost:7270');
   }
 }

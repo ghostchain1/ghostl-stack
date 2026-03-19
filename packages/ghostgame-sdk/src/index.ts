@@ -3,7 +3,7 @@
 // All game transactions settle on GhostL3 (chain_id=903)
 
 export interface GhostGameConfig {
-  rpc: string;                    // GhostL3 RPC (http://localhost:39545)
+  rpc: string;                    // GhostL3 RPC (http://localhost:7270)
   gameRegistryAddress: string;    // on-chain game registry contract
   rewardContractAddress: string;  // GST reward distributor
   authToken?: string;
@@ -60,7 +60,7 @@ export interface GhostRewardEvent {
  * import { GhostGame } from '@ghostchain/ghostgame-sdk';
  *
  * const game = new GhostGame({
- *   rpc: 'http://localhost:39545',
+ *   rpc: 'http://localhost:7270',
  *   gameRegistryAddress: '0x...',
  *   rewardContractAddress: '0x...',
  * });

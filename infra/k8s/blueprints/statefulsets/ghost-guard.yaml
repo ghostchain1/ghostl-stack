@@ -101,7 +101,7 @@
               },
               {
                 "name": "RPC_L2",
-                "value": "http://l2-geth:8545"
+                "value": "http://ghost-exec-l2:7260"
               },
               {
                 "name": "STATE_DIR",

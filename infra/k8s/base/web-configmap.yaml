@@ -11,7 +11,7 @@ data:
   API_INTERNAL_URL: "http://ghostl-api:4000"
   NEXT_PUBLIC_L1_RPC: "http://localhost:18545"
   NEXT_PUBLIC_L2_RPC: "http://localhost:18547"
-  NEXT_PUBLIC_L3_RPC: "http://localhost:39545"
+  NEXT_PUBLIC_L3_RPC: "http://localhost:7270"
   NEXT_PUBLIC_L1_CHAIN_ID: "14000101"
   NEXT_PUBLIC_L2_CHAIN_ID: "901"
   NEXT_PUBLIC_L3_CHAIN_ID: "903"

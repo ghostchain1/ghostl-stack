@@ -43,7 +43,7 @@ export interface CreateAvatarResult {
   avatar:  GhostAvatar;
 }
 
-const L3_RPC = 'http://localhost:39545';
+const L3_RPC = 'http://localhost:7270';
 
 // ─── AvatarEngine ─────────────────────────────────────────────────────────────
 
@@ -176,5 +176,5 @@ export class AvatarEngine {
     return Array.from(this.avatars.values()).filter(a => a.online && a.position?.worldId === worldId);
   }
 
-  static devnet(): AvatarEngine { return new AvatarEngine('http://localhost:39545'); }
+  static devnet(): AvatarEngine { return new AvatarEngine('http://localhost:7270'); }
 }

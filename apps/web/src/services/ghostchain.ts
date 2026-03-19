@@ -6,8 +6,8 @@
  *
  * Chain IDs:
  *   L1 → 14000101  (GhostChain sovereign, RPC :18545)
- *   L2 → 901       (GhostL2 OP Stack,    RPC :29547)
- *   L3 → 903       (GhostL3 OP Stack,    RPC :39545)
+ *   L2 → 901       (GhostL2,             RPC :29547)
+ *   L3 → 903       (GhostL3,             RPC :39545)
  */
 
 export type ChainLayer = 'l1' | 'l2' | 'l3';

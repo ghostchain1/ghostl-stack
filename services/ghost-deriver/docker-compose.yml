@@ -1,0 +1,19 @@
+services:
+  ghost-deriver:
+    build:
+      context: ../..
+      dockerfile: services/ghost-deriver/Dockerfile
+    env_file: .env.example
+    ports:
+      - "7262:7262"
+    volumes:
+      - ghost-deriver-state:/state
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "healthcheck.sh"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  ghost-deriver-state:

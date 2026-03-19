@@ -24,9 +24,9 @@
 
 export const GHOST_STARLINK_CHAINS = {
   /** Bandwidth micropayments and relay registry — L3 for low latency */
-  payments: { chainId: 903,      rpc: 'http://localhost:39545', name: 'GhostL3' },
+  payments: { chainId: 903,      rpc: 'http://localhost:7270', name: 'GhostL3' },
   /** Relay node registry and reputation — L2 */
-  relay:    { chainId: 901,      rpc: 'http://localhost:29547', name: 'GhostL2' },
+  relay:    { chainId: 901,      rpc: 'http://localhost:7260', name: 'GhostL2' },
   /** Permanent satellite node registry — L1 */
   registry: { chainId: 14000101, rpc: 'http://localhost:18545', name: 'GhostChain L1' },
 } as const;
@@ -419,8 +419,8 @@ export class GhostStarlink {
   /** GhostStarlink on devnet */
   static devnet(overrides?: Partial<GhostStarlinkConfig>): GhostStarlink {
     return new GhostStarlink({
-      paymentsRpc:             'http://localhost:39545',
-      relayRpc:                'http://localhost:29547',
+      paymentsRpc:             'http://localhost:7270',
+      relayRpc:                'http://localhost:7260',
       registryRpc:             'http://localhost:18545',
       relayRegistryAddress:    '0x0000000000000000000000000000000000020001',
       bandwidthPaymentAddress: '0x0000000000000000000000000000000000020002',

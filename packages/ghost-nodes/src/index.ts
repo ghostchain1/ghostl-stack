@@ -14,8 +14,8 @@
  * - Connection:     GhostNodePool, GhostRPCClient
  * - Discovery:      GhostNodeRegistry
  * - Health:         GhostNodeHealthMonitor
- * - RPC constants:  GhostRPCMethod (ghost_* named)
- * - Compat aliases: @ghostchain/ghost-nodes/compat (ethers types under Ghost names) // brand-enforcer-ignore
+ * - RPC constants:  GhostRPCMethod + GhostRPCCompatMethod
+ * - Compat aliases: @ghostchain/ghost-nodes/compat (ethers types and deprecated rollup aliases under Ghost names) // brand-enforcer-ignore
  */
 
 // ─── Core types ───────────────────────────────────────────────────────────────
@@ -43,7 +43,9 @@ export type {
 // ─── RPC ──────────────────────────────────────────────────────────────────────
 export {
   GhostRPCMethod,
+  GhostRPCCompatMethod,
   GhostRPCMethodName,
+  GhostRPCCompatMethodName,
 } from "./rpc/GhostRPCMethod.js";
 
 export {

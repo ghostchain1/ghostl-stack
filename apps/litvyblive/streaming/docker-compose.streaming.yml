@@ -4,7 +4,7 @@
 #   docker compose -f apps/litvyblive/streaming/docker-compose.streaming.yml up -d
 #
 # All WebRTC media (RTP/RTCP) uses host networking for UDP port ranges.
-# Services settle monetisation on GhostL3 (chain_id=903, RPC :39545) via GST Token.
+# Services settle monetisation on GhostL3 (chain_id=903, RPC :7270) via GST Token.
 #
 # Architecture:
 #   Flutter App → WebRTC Gateway (auth) → MediaSoup Core SFU → Viewers
@@ -20,7 +20,7 @@ x-common-env: &common-env
   JWT_SECRET:            "${LITVYB_JWT_SECRET:-litvyblive-dev-secret}"
   REDIS_URL:             "redis://redis:6379"
   DATA_DIR:              "/data"
-  GHOST_L3_RPC:          "${GHOST_L3_RPC:-http://host.docker.internal:39545}"
+  GHOST_L3_RPC:          "${GHOST_L3_RPC:-http://host.docker.internal:7270}"
   GHOST_L3_CHAIN_ID:     "903"
 
 x-svc-defaults: &svc-defaults

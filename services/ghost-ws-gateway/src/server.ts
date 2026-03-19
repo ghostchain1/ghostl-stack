@@ -6,8 +6,8 @@
  * Architecture:
  *   [GhostBrain Core :7900]  ──poll──▶  [ws-gateway :8085]  ──push──▶  [Browser]
  *   [L1 RPC :18545]          ──poll──▶  ↑
- *   [L2 RPC :29547]          ──poll──▶  ↑
- *   [L3 RPC :39545]          ──poll──▶  ↑
+ *   [L2 RPC :7260]          ──poll──▶  ↑
+ *   [L3 RPC :7270]          ──poll──▶  ↑
  *
  * Message types broadcast to clients:
  *   { type: "block",    chain, blockNumber, timestamp }
@@ -19,8 +19,8 @@
  *   WS_PORT             (default 8085)
  *   GHOSTBRAIN_URL      (default http://localhost:7900)
  *   L1_RPC_URL          (default http://localhost:18545)
- *   L2_RPC_URL          (default http://localhost:29547)
- *   L3_RPC_URL          (default http://localhost:39545)
+ *   L2_RPC_URL          (default http://localhost:7260)
+ *   L3_RPC_URL          (default http://localhost:7270)
  *   POLL_INTERVAL_MS    (default 6000)
  *   MAX_CLIENTS         (default 200)
  *
@@ -39,8 +39,8 @@ import { createServer } from 'http';
 const PORT          = parseInt(process.env.WS_PORT           ?? '8085', 10);
 const BRAIN_URL     = process.env.GHOSTBRAIN_URL             ?? 'http://localhost:7900';
 const L1_URL        = process.env.L1_RPC_URL                 ?? 'http://localhost:18545';
-const L2_URL        = process.env.L2_RPC_URL                 ?? 'http://localhost:29547';
-const L3_URL        = process.env.L3_RPC_URL                 ?? 'http://localhost:39545';
+const L2_URL        = process.env.L2_RPC_URL                 ?? 'http://localhost:7260';
+const L3_URL        = process.env.L3_RPC_URL                 ?? 'http://localhost:7270';
 const POLL_MS       = parseInt(process.env.POLL_INTERVAL_MS  ?? '6000', 10);
 const MAX_CLIENTS   = parseInt(process.env.MAX_CLIENTS       ?? '200',  10);
 

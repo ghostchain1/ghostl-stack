@@ -1,13 +1,19 @@
 // GhostL2 SDK — GhostChain Layer 2
-// OP-Stack based rollup anchored to GhostChain L1
-// Chain ID: 901 | RPC: http://localhost:29547
+// Legacy rollup telemetry remains available through the explicit Ghost compat RPC surface.
+// Chain ID: 901 | RPC: http://localhost:7260
 
 import type { BridgeTransferReceipt } from '@ghostchain/ghostbridge-sdk';
+
+const GHOST_L2_COMPAT_RPC = {
+  syncStatus: 'ghost_compat_syncStatus',
+  rollupConfig: 'ghost_compat_rollupConfig',
+  outputAtBlock: 'ghost_compat_outputAtBlock',
+} as const;
 
 /** GhostL2 canonical constants */
 export const GHOST_L2 = {
   CHAIN_ID: 901,
-  RPC: 'http://localhost:29547',
+  RPC: 'http://localhost:7260',
   L1_ROLLUP: '0xad32D5C2Da9f4159C4cc98686C005852b3905355',
   FINALITY_ORACLE: '0x650aEF4b63095e4EDe581BC79CdeA927e3ba553A',
 } as const;
@@ -72,19 +78,19 @@ export class GhostL2 {
       this._rpc<{ currentBlock: string; highestBlock: string } | false>('ghost_syncing'),
     ]);
 
-    const opStatus = await this._rpc<{
+    const compatStatus = await this._rpc<{
       safe_l2: { number: number };
       finalized_l2: { number: number };
       sequencer_addr: string;
-    }>('optimism_syncStatus').catch(() => null);
+    }>(GHOST_L2_COMPAT_RPC.syncStatus).catch(() => null);
 
     return {
       chainId: parseInt(chainId, 16),
       blockNumber: BigInt(blockHex),
-      safeBlockNumber: BigInt(opStatus?.safe_l2.number ?? 0),
-      finalizedBlockNumber: BigInt(opStatus?.finalized_l2.number ?? 0),
+      safeBlockNumber: BigInt(compatStatus?.safe_l2.number ?? 0),
+      finalizedBlockNumber: BigInt(compatStatus?.finalized_l2.number ?? 0),
       sequencerRunning: syncStatus === false,
-      batcherAddress: opStatus?.sequencer_addr ?? '',
+      batcherAddress: compatStatus?.sequencer_addr ?? '',
       l1ConfirmationBlocks: 1,
     };
   }
@@ -169,12 +175,12 @@ export class GhostL2 {
 
   /** Get rollup config */
   async rollupConfig(): Promise<Record<string, unknown>> {
-    return this._rpc('optimism_rollupConfig');
+    return this._rpc(GHOST_L2_COMPAT_RPC.rollupConfig);
   }
 
   /** Get output root at a given L2 block */
   async outputAtBlock(blockNumber: bigint): Promise<{ outputRoot: string; l1Timestamp: number }> {
-    return this._rpc('optimism_outputAtBlock', [`0x${blockNumber.toString(16)}`]);
+    return this._rpc(GHOST_L2_COMPAT_RPC.outputAtBlock, [`0x${blockNumber.toString(16)}`]);
   }
 
   private async _rpc<T>(method: string, params: unknown[] | Record<string, unknown> = []): Promise<T> {

@@ -26,8 +26,8 @@
  *   ORCH_ENV                control-plane manifest env          (default: devnet)
  *   ORCH_CONFIG_DIR         overrides service config directory
  *   RPC_L1_URL              L1 RPC endpoint  (default: http://localhost:18545)
- *   RPC_L2_URL              L2 RPC endpoint  (default: http://localhost:29547)
- *   RPC_L3_URL              L3 RPC endpoint  (default: http://localhost:39545)
+ *   RPC_L2_URL              L2 RPC endpoint  (default: http://localhost:7260)
+ *   RPC_L3_URL              L3 RPC endpoint  (default: http://localhost:7270)
  *   DRY_RUN                 if "1" log actions without executing (default: 0)
  *   ORCH_PORT               HTTP port for status API    (default: 7950)
  */
@@ -60,8 +60,8 @@ const TEST_TIMEOUT_MS      = Number(process.env.TEST_TIMEOUT_MS   ?? '300000');
 const QUALITY_TIMEOUT_MS   = Number(process.env.QUALITY_TIMEOUT_MS ?? '900000');
 const APP_BUILD_TIMEOUT_MS = Number(process.env.APP_BUILD_TIMEOUT_MS ?? '1200000');
 const RPC_L1_URL           = (process.env.RPC_L1_URL ?? 'http://localhost:18545').replace(/\/$/, '');
-const RPC_L2_URL           = (process.env.RPC_L2_URL ?? 'http://localhost:29547').replace(/\/$/, '');
-const RPC_L3_URL           = (process.env.RPC_L3_URL ?? 'http://localhost:39545').replace(/\/$/, '');
+const RPC_L2_URL           = (process.env.RPC_L2_URL ?? 'http://localhost:7260').replace(/\/$/, '');
+const RPC_L3_URL           = (process.env.RPC_L3_URL ?? 'http://localhost:7270').replace(/\/$/, '');
 const ENABLE_APP_BUILD     = process.env.ENABLE_APP_BUILD !== '0';
 const ENABLE_SERVICE_BUILD = process.env.ENABLE_SERVICE_BUILD === '1';
 const ORCH_ENV             = parseRuntimeEnvironment(process.env.ORCH_ENV);

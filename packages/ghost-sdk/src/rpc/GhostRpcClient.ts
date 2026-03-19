@@ -57,10 +57,10 @@ export interface GhostBatchCall<T = unknown> {
  *
  * ```ts
  * const rpc = new GhostRpcClient({ url: "http://localhost:8545" });
- * const chainId = await rpc.request<number>("eth_chainId", []);
+ * const chainId = await rpc.request<number>("ghost_chainId", []);
  * const [balA, balB] = await rpc.batch([
- *   { method: "eth_getBalance", params: [addrA, "latest"] },
- *   { method: "eth_getBalance", params: [addrB, "latest"] },
+ *   { method: "ghost_getBalance", params: [addrA, "latest"] },
+ *   { method: "ghost_getBalance", params: [addrB, "latest"] },
  * ]);
  * ```
  */

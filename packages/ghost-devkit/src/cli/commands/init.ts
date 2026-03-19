@@ -7,7 +7,7 @@ const log = Logger.create("init");
 
 const GHOST_CONFIG = {
   network: "l2",
-  rpc: { l1: "http://127.0.0.1:18545", l2: "http://127.0.0.1:29547", l3: "http://127.0.0.1:39545" },
+  rpc: { l1: "http://127.0.0.1:18545", l2: "http://127.0.0.1:7260", l3: "http://127.0.0.1:7270" },
   deployment: { confirmations: 1, gasMultiplier: 1.2 },
   foundry: { projectRoot: "contracts", outDir: "out", scriptDir: "script" },
   validator: { minPeers: 3, restartOnLowPeers: true },

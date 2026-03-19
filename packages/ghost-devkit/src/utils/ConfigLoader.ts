@@ -36,8 +36,8 @@ const DEFAULTS: GhostConfig = {
   network: "l2",
   rpc: {
     l1: "http://127.0.0.1:18545",
-    l2: "http://127.0.0.1:29547",
-    l3: "http://127.0.0.1:39545",
+    l2: "http://127.0.0.1:7260",
+    l3: "http://127.0.0.1:7270",
   },
   deployment: {
     confirmations: 1,

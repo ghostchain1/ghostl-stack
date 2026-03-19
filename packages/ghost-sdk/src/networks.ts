@@ -3,8 +3,8 @@
  *
  * Chain IDs match the live GhostStack deployment:
  *   L1: GhostChain mainnet-equiv Anvil node  (chainId 14000101)
- *   L2: GhostL2 OP Stack op-geth             (chainId 901)
- *   L3: GhostL3 OP Stack op-geth             (chainId 903)
+ *   L2: GhostL2 canonical execution RPC      (chainId 901)
+ *   L3: GhostL3 canonical execution RPC      (chainId 903)
  */
 
 export type GhostLayer = "L1" | "L2" | "L3";

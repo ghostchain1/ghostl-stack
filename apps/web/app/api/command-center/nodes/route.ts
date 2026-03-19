@@ -6,8 +6,8 @@ const L3_RPC = process.env['L3_RPC_URL'] ?? 'http://localhost:39545';
 
 const NODES: Array<{ name: string; layer: string; chainId: number; rpc: string }> = [
   { name: 'GhostChain L1',       layer: 'L1', chainId: 14000101, rpc: L1_RPC },
-  { name: 'GhostL2 (op-geth)',   layer: 'L2', chainId: 901,      rpc: L2_RPC },
-  { name: 'GhostL3 (op-geth)',   layer: 'L3', chainId: 903,      rpc: L3_RPC },
+  { name: 'GhostL2 RPC',         layer: 'L2', chainId: 901,      rpc: L2_RPC },
+  { name: 'GhostL3 RPC',         layer: 'L3', chainId: 903,      rpc: L3_RPC },
 ];
 
 async function probeNode(rpc: string): Promise<{ status: string; blockNumber?: number }> {

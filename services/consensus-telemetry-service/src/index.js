@@ -1036,7 +1036,7 @@ const fetchOpSyncStatus = async (rpc) => {
   if (!rpc) return null;
   try {
     const provider = getProvider(rpc);
-    return await provider.send("optimism_syncStatus", []);
+    return await provider.send("ghost_compat_syncStatus", []);
   } catch (err) {
     return { error: err?.message || "opnode_unreachable" };
   }
@@ -1054,11 +1054,11 @@ const normalizeOpEntry = (entry) => {
 const normalizeOpStatus = (status) => {
   if (!status || status.error) return null;
   return {
-    currentL1: normalizeOpEntry(status.currentL1),
-    headL1: normalizeOpEntry(status.headL1),
-    safeL2: normalizeOpEntry(status.safeL2),
-    finalizedL2: normalizeOpEntry(status.finalizedL2),
-    unsafeL2: normalizeOpEntry(status.unsafeL2)
+    currentL1: normalizeOpEntry(status.currentL1 ?? status.current_l1),
+    headL1: normalizeOpEntry(status.headL1 ?? status.head_l1),
+    safeL2: normalizeOpEntry(status.safeL2 ?? status.safe_l2),
+    finalizedL2: normalizeOpEntry(status.finalizedL2 ?? status.finalized_l2),
+    unsafeL2: normalizeOpEntry(status.unsafeL2 ?? status.unsafe_l2)
   };
 };
 

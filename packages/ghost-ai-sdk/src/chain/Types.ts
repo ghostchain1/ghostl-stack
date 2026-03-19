@@ -1,5 +1,6 @@
 import type { GhostLayer } from "../config.js";
 export type { GhostLayer } from "../config.js";
+export type GhostTargetLayer = GhostLayer | "EXTERNAL";
 
 export type TxRequest = {
   to:                   string;
@@ -17,7 +18,9 @@ export type RoutedTxPlan = {
   path:              GhostLayer[];
   /** Layer on which the tx is actually sent. */
   executeOn:         GhostLayer;
-  /** True if cross-layer messenger calls are needed. */
+  /** Final destination layer after all enforced relay hops. */
+  targetLayer:       GhostTargetLayer;
+  /** True if cross-layer relay calls are needed. */
   requiresMessaging: boolean;
   reason:            string;
 };

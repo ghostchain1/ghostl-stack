@@ -18,12 +18,11 @@ import {
   BRAND,
   VIOLATION_PATTERNS,
   BRIDGE_ALLOWLIST_PATTERNS,
-  COMPAT_ALLOWLIST_PATTERNS,
   REQUIRED_ANCHORS,
   SCANNABLE_EXTENSIONS,
 } from './src/rules.js';
 
-export { BRAND, VIOLATION_PATTERNS, BRIDGE_ALLOWLIST_PATTERNS, COMPAT_ALLOWLIST_PATTERNS };
+export { BRAND, VIOLATION_PATTERNS, BRIDGE_ALLOWLIST_PATTERNS };
 
 // ---------------------------------------------------------------------------
 // Canonical brand spec (loaded once, exported for consumers)
@@ -98,7 +97,7 @@ function walkFiles(dir) {
       const full = join(current, entry.name);
       if (entry.isDirectory()) {
         // Skip well-known noise directories early
-        if (['node_modules', '.git', 'dist', 'out', 'cache', 'cache-codex', 'out-codex', '.next', '.next-ghost'].includes(entry.name)) continue;
+        if (['node_modules', '.git', 'dist', 'cache', 'cache-codex', 'out-codex'].includes(entry.name)) continue;
         walk(full);
       } else if (entry.isFile() && SCANNABLE_EXTENSIONS.has(extname(entry.name))) {
         results.push(full);
@@ -129,12 +128,6 @@ export function validateNoEthLeaks(content, filePath, extraAllowlistPaths = []) 
   const lines = content.split('\n');
 
   for (const pattern of VIOLATION_PATTERNS) {
-    // Per-rule compat exemption: skip this pattern for files in the designated compat paths
-    if (
-      pattern.allowlistedBy === 'COMPAT_ALLOWLIST_PATTERNS' &&
-      COMPAT_ALLOWLIST_PATTERNS.some((p) => p.test(filePath))
-    ) continue;
-
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       // Skip single-line brand-enforcer-ignore comments

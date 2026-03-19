@@ -30,7 +30,7 @@ export interface GhostClientConfig {
   l1Url?: string;
   /** L2 RPC URL (default: http://localhost:29547) */
   l2Url?: string;
-  /** L3 RPC URL (optional) */
+  /** L3 RPC URL (default: http://localhost:39545 when configured) */
   l3Url?: string;
   /** Hex private key for signing (optional — read-only if omitted) */
   privateKey?: `0x${string}`;

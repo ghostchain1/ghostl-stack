@@ -79,7 +79,7 @@ scrape_configs:
     metrics_path: /debug/metrics/prometheus
     scheme: http
     static_configs:
-      - targets: ["host.docker.internal:39545"]
+      - targets: ["host.docker.internal:7270"]
         labels:
           tier: blockchain
           chain: l3

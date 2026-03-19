@@ -107,13 +107,13 @@ function _stripLeadingZeros(bytes) {
 }
 // ─── Per-layer factory helpers ────────────────────────────────────────────────
 function makeL1Transaction(fields) {
-    return _make(31337, fields);
+    return _make(14000101, fields);
 }
 function makeL2Transaction(fields) {
-    return _make(42069, fields);
+    return _make(901, fields);
 }
 function makeL3Transaction(fields) {
-    return _make(43069, fields);
+    return _make(903, fields);
 }
 function _make(chainId, fields) {
     const tx = new GhostTransaction();

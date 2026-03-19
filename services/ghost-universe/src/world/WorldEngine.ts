@@ -38,7 +38,7 @@ export interface CreateWorldOptions {
   maxPlayers?:  number;
 }
 
-const L3_RPC = 'http://localhost:39545';
+const L3_RPC = 'http://localhost:7270';
 
 // ─── WorldEngine ─────────────────────────────────────────────────────────────
 
@@ -176,5 +176,5 @@ export class WorldEngine {
     return BigInt(json.result ?? '0x0');
   }
 
-  static devnet(): WorldEngine { return new WorldEngine('http://localhost:39545'); }
+  static devnet(): WorldEngine { return new WorldEngine('http://localhost:7270'); }
 }

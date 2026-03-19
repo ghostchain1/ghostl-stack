@@ -29,7 +29,7 @@ data:
   NOTIFICATION_SVC:   "http://notification-service:7026"
   STREAM_CONTROLLER_URL: "http://stream-controller:3002"
   GHOSTBRAIN_URL:     "http://ghostbrain-core.ghostchain.svc.cluster.local:7900"
-  GHOST_L3_RPC:       "http://ghostchain-l3-rpc.ghostchain.svc.cluster.local:39545"
+  GHOST_L3_RPC:       "http://ghostchain-l3-rpc.ghostchain.svc.cluster.local:7270"
   # Streaming
   RTC_MIN_PORT:       "40000"
   RTC_MAX_PORT:       "49999"

@@ -17,12 +17,58 @@ import { getVMFleet }           from "../vm_monitor.js";
 import { store_event }          from "../memory_engine.js";
 import { log }                  from "../observability/event_logger.js";
 
-// Named containers expected to run — extend via GUARDIAN_ALLOWLIST env var.
-const DEFAULT_ALLOWLIST = [
-  "ghostbrain", "ghostbrain-worker", "ghostbrain-redis",
-  "ghostbrain-postgres", "ghostbrain-qdrant",
-  "op-geth", "op-node", "op-batcher",
+// Container-name stems expected in Ghost-native runtime bundles.
+// We intentionally match by partial stem because compose projects may
+// prepend or append extra name segments.
+const GHOST_RUNTIME_ALLOWLIST = [
+  "ghostbrain",
+  "ghostbrain-worker",
+  "ghostbrain-redis",
+  "ghostbrain-postgres",
+  "ghostbrain-qdrant",
+  "ghostbrain-nats",
+  "ghostbrain-orchestrator",
+  "hypervisor-supervisor",
+  "host-orchestrator-ai",
+  "ghost-helper-bots",
+  "acg-planner",
+  "acg-auditor",
+  "acg-sentinel",
+  "hyper-ghost-ai",
+  "governance-event-bridge",
+  "ghost-rpc-aggregator",
+  "ghost-tx-engine",
+  "ghost-memory-guard",
+  "ghost-rpc-proxy",
+  "ghost-rollup-proxy",
+  "ghost-exec",
+  "ghost-sequencer",
+  "ghost-deriver",
+  "ghost-settlement",
+  "ghost-bridge",
+  "ghost-proof",
+  "ghost-observability",
+  "ghostchaind",
+  "ghostchain-evm",
+  "ghostchain-l1",
+  "ghostl2",
+  "ghostl3",
 ];
+
+// Legacy OP Stack fleets are no longer part of the default runtime inventory.
+// Operators can still opt them back in while compat stacks remain active.
+const LEGACY_OPSTACK_ALLOWLIST = [
+  "op-geth",
+  "op-node",
+  "op-batcher",
+  "op-proposer",
+  "op-challenger",
+  "l3-op-node",
+];
+
+function parseCsvList(value: string): string[] {
+  return value.split(",").map((entry) => entry.trim()).filter(Boolean);
+}
 
 export interface GhostSecurityGuardianConfig {
   intervalMs?:      number;
@@ -46,11 +92,20 @@ export class GhostSecurityGuardian {
   private recentAlerts: SecurityAlert[] = [];
 
   constructor(cfg: GhostSecurityGuardianConfig = {}) {
-    const envList  = (process.env.GUARDIAN_ALLOWLIST ?? "").split(",").filter(Boolean);
-    this.allow     = new Set([...DEFAULT_ALLOWLIST, ...(cfg.allowlist ?? []), ...envList]);
+    const envList  = parseCsvList(process.env.GUARDIAN_ALLOWLIST ?? "");
+    const compatOpstack = process.env.GUARDIAN_ALLOW_OPSTACK_COMPAT === "1";
+    this.allow     = new Set([
+      ...GHOST_RUNTIME_ALLOWLIST,
+      ...(compatOpstack ? LEGACY_OPSTACK_ALLOWLIST : []),
+      ...(cfg.allowlist ?? []),
+      ...envList,
+    ]);
     this.stormMax  = cfg.restartStormMax ?? Number(process.env.GUARDIAN_RESTART_STORM_MAX ?? "5");
     const ms       = cfg.intervalMs     ?? Number(process.env.GUARDIAN_INTERVAL_MS ?? "30000");
-    log.info("ghost_security_guardian: init", `intervalMs=${ms} stormMax=${this.stormMax} allowlistSize=${this.allow.size}`);
+    log.info(
+      "ghost_security_guardian: init",
+      `intervalMs=${ms} stormMax=${this.stormMax} allowlistSize=${this.allow.size} compatOpstack=${compatOpstack ? 1 : 0}`,
+    );
     this.interval  = setInterval(() => this.tick(), ms);
   }
 

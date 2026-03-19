@@ -3,8 +3,8 @@
  *
  * Collects and aggregates health metrics from every layer of the GhostStack:
  *   - GhostChain L1  (chain_id 14000101, RPC :18545)
- *   - GhostL2        (chain_id 901,       RPC :29547)
- *   - GhostL3        (chain_id 903,       RPC :39545)
+ *   - GhostL2        (chain_id 901,       RPC :7260)
+ *   - GhostL3        (chain_id 903,       RPC :7270)
  *   - GhostBrain Core (:7900)
  *   - All registered orchestrator agents
  *
@@ -26,8 +26,8 @@ const MAX_TELEMETRY_HISTORY = 500;
 
 const GHOSTBRAIN_URL = process.env["GHOSTBRAIN_API_URL"] ?? "http://localhost:7900";
 const L1_RPC_URL     = process.env["L1_RPC_URL"]         ?? "http://localhost:18545";
-const L2_RPC_URL     = process.env["L2_RPC_URL"]         ?? "http://localhost:29547";
-const L3_RPC_URL     = process.env["L3_RPC_URL"]         ?? "http://localhost:39545";
+const L2_RPC_URL     = process.env["L2_RPC_URL"]         ?? "http://localhost:7260";
+const L3_RPC_URL     = process.env["L3_RPC_URL"]         ?? "http://localhost:7270";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

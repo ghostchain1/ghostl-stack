@@ -19,8 +19,8 @@ import type { BridgeConfig } from './types.js';
  *
  * const bridge = new GhostBridge({
  *   l1Rpc: 'http://localhost:18545',
- *   l2Rpc: 'http://localhost:29547',
- *   l3Rpc: 'http://localhost:39545',
+ *   l2Rpc: 'http://localhost:7260',
+ *   l3Rpc: 'http://localhost:7270',
  * });
  *
  * // Deposit from L1 to L2

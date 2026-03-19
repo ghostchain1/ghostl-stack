@@ -6,7 +6,8 @@
  *
  *   1. Target format validation — alphanumeric + limited punctuation, max 128 chars
  *   2. Action allowlist — explicit per-type permitted action set
- *   3. Protected target patterns — L1, signing relay, DB layer: never mutable
+ *   3. Protected target patterns — L1, GhostBrain control plane, data layer,
+ *      and Ghost runtime processes: never mutable
  *   4. Target allowlist — opt-in env-configured set of mutable resources
  *   5. Per-target sliding-window rate limiter (circuit breaker)
  *
@@ -42,14 +43,26 @@ const ALLOWED_ACTIONS: Readonly<Record<KernelCommand["type"], readonly string[]>
   resource: ["rebalance", "set_cpu_quota", "set_mem_quota"],
 };
 
-// These targets are absolutely protected — L1 chain, signing relay, kernel
-// itself, and the data layer.  No autonomous action may target them.
-// Escalation goes to the signing relay for human ratification.
-const PROTECTED_PATTERNS: readonly RegExp[] = [
-  /ghostchain|ghost-l1|ghostl1/i,
-  /signing[-_]relay|ghostbrain[-_]core/i,
+// These targets are absolutely protected — L1 chain, signing relay, GhostBrain
+// control plane, data layer, and the Ghost-native rollup runtime. No autonomous
+// action may target them. Escalation goes to the signing relay for human
+// ratification.
+const GHOST_PROTECTED_PATTERNS: readonly RegExp[] = [
+  /ghostchain|ghost[-_]?l1|ghostchaind|ghostchain-evm|ghostchain-l1/i,
+  /signing[-_]relay|^ghostbrain(?:[-_].*)?$|^hyper-ghost-ai$|^hypervisor-supervisor$/i,
   /\bpostgres\b|\bredis\b|\bqdrant\b/i,
-  /^ghostchaind$|^op-geth$|^op-node$/i,
+  /^(?:ghost[_-])?(?:ghost-exec|ghost-sequencer|ghost-deriver|ghost-settlement|ghost-bridge|ghost-proof|ghost-observability|ghost-rollup-proxy|ghost-rpc-proxy|ghostl2|ghostl3)(?:[-_].*)?$/i,
+];
+
+// Legacy OP Stack protection remains only as a safety fallback while compat
+// environments still exist on some operators' hosts.
+const LEGACY_COMPAT_PROTECTED_PATTERNS: readonly RegExp[] = [
+  /^(?:op-geth|op-node|l3-op-node|op-batcher|op-proposer|op-challenger)(?:[-_].*)?$/i,
+];
+
+const PROTECTED_PATTERNS: readonly RegExp[] = [
+  ...GHOST_PROTECTED_PATTERNS,
+  ...LEGACY_COMPAT_PROTECTED_PATTERNS,
 ];
 
 // Optional allowlist: comma-separated container / VM names.

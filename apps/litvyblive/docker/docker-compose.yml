@@ -1,6 +1,6 @@
 # LitVybzLive — GhostL3 platform services
 # All transactions are hard-locked to GhostChain L3 (chain_id=903)
-# Connects to ghostchaind L1:18545 / L2:29547 / L3:39545 via host network
+# Connects to ghostchaind L1:18545 / L2:7260 / L3:7270 via host network
 
 services:
 
@@ -21,7 +21,7 @@ services:
       DB_PATH: /data/litvyblive.db
       JWT_SECRET: ${JWT_SECRET:?secret required}
       GHOSTBRAIN_URL: http://ai:7002
-      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:7270}
       GHOST_L3_CHAIN_ID: "903"
       MEDIASOUP_URL: http://mediasoup:2000
     volumes:
@@ -65,7 +65,7 @@ services:
       PORT: "3100"
       BACKEND_URL: http://backend:7001
       GHOSTBRAIN_URL: http://ai:7002
-      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:7270}
     depends_on:
       - backend
     networks:
@@ -150,7 +150,7 @@ services:
       PORT:         "7040"
       DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
       REDIS_URL:    redis://economy-redis:6379
-      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:7270}
     depends_on:
       economy-postgres: { condition: service_healthy }
       economy-redis:    { condition: service_healthy }
@@ -173,7 +173,7 @@ services:
       PORT:         "7041"
       DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
       REDIS_URL:    redis://economy-redis:6379
-      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:7270}
     depends_on:
       economy-postgres: { condition: service_healthy }
       economy-redis:    { condition: service_healthy }
@@ -196,7 +196,7 @@ services:
       PORT:         "7042"
       DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
       REDIS_URL:    redis://economy-redis:6379
-      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:7270}
     depends_on:
       economy-postgres: { condition: service_healthy }
       economy-redis:    { condition: service_healthy }
@@ -219,7 +219,7 @@ services:
       PORT:         "7043"
       DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
       REDIS_URL:    redis://economy-redis:6379
-      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:7270}
     depends_on:
       economy-postgres: { condition: service_healthy }
       economy-redis:    { condition: service_healthy }
@@ -242,7 +242,7 @@ services:
       PORT:         "7044"
       DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
       REDIS_URL:    redis://economy-redis:6379
-      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:7270}
     depends_on:
       economy-postgres: { condition: service_healthy }
       economy-redis:    { condition: service_healthy }
@@ -265,7 +265,7 @@ services:
       PORT:         "7045"
       DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
       REDIS_URL:    redis://economy-redis:6379
-      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:7270}
       CREATOR_TREASURY_URL: http://creator-treasury:7040
     depends_on:
       economy-postgres:  { condition: service_healthy }
@@ -290,7 +290,7 @@ services:
       PORT:         "7046"
       DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
       REDIS_URL:    redis://economy-redis:6379
-      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:7270}
       STAKING_ENGINE_URL: http://staking-engine:7044
     depends_on:
       economy-postgres: { condition: service_healthy }
@@ -315,7 +315,7 @@ services:
       PORT:         "7047"
       DATABASE_URL: postgresql://litvyb:${ECONOMY_DB_PASSWORD}@economy-postgres:5432/litvyb_economy
       REDIS_URL:    redis://economy-redis:6379
-      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:39545}
+      GHOST_L3_RPC: ${GHOST_L3_RPC:-http://host.docker.internal:7270}
       CREATOR_TOKENS_URL:  http://creator-tokens:7042
       NFT_GIFTS_URL:       http://nft-gifts:7043
     depends_on:

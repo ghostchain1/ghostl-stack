@@ -1,4 +1,4 @@
-// GhostNode SDK — Sequencer Node (L2/L3 OP-Stack)
+// GhostNode SDK — Sequencer Node (L2/L3 legacy rollup telemetry via Ghost compat RPC)
 
 import type { GhostNodeConfig } from '../types.js';
 
@@ -12,9 +12,9 @@ export interface GhostSequencerStatus {
 }
 
 /**
- * GhostSequencer — manages OP-Stack based L2/L3 sequencer nodes.
- * L2 chain ID: 901 (RPC :29547)
- * L3 chain ID: 903 (RPC :39545)
+ * GhostSequencer — manages L2/L3 sequencer telemetry during the custom-runtime migration.
+ * L2 chain ID: 901 (RPC :7260)
+ * L3 chain ID: 903 (RPC :7270)
  */
 export class GhostSequencer {
   private readonly config: GhostNodeConfig;
@@ -26,17 +26,17 @@ export class GhostSequencer {
 
   /** Get OP-Stack sequencer rollup status */
   async status(): Promise<GhostSequencerStatus> {
-    return this._rpc<GhostSequencerStatus>('optimism_syncStatus');
+    return this._rpc<GhostSequencerStatus>('ghost_compat_syncStatus');
   }
 
   /** Get the output root at a given block */
   async outputAtBlock(blockNumber: bigint): Promise<{ outputRoot: string; blockRef: string }> {
-    return this._rpc('optimism_outputAtBlock', [`0x${blockNumber.toString(16)}`]);
+    return this._rpc('ghost_compat_outputAtBlock', [`0x${blockNumber.toString(16)}`]);
   }
 
   /** Get rollup config */
   async rollupConfig(): Promise<Record<string, unknown>> {
-    return this._rpc('optimism_rollupConfig');
+    return this._rpc('ghost_compat_rollupConfig');
   }
 
   /** Get the safe head reference */

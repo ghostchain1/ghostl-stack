@@ -8,7 +8,7 @@
  *
  *   // Namespace default import
  *   import ghost from "ghost";
- *   const provider = new ghost.JsonRpcProvider("http://localhost:29547", "L2");
+ *   const provider = new ghost.JsonRpcProvider("http://localhost:7260", "L2");
  *
  *   // Named imports
  *   import { ghost, JsonRpcProvider, GhostWallet } from "ghost";

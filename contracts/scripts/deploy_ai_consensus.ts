@@ -9,8 +9,8 @@
  *   cd contracts
  *   DEPLOYER_PRIVATE_KEY=0xac09... \
  *   RPC_L1=http://localhost:18545 \
- *   RPC_L2=http://localhost:29547 \
- *   RPC_L3=http://localhost:39545 \
+ *   RPC_L2=http://localhost:7260 \
+ *   RPC_L3=http://localhost:7270 \
  *   npx ts-node scripts/deploy_ai_consensus.ts
  *
  * Safe to re-run: skips contracts already deployed at the recorded address.
@@ -30,8 +30,8 @@ const DEPLOYER_KEY =
   "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
 const RPC_L1 = process.env.RPC_L1 ?? "http://localhost:18545";
-const RPC_L2 = process.env.RPC_L2 ?? "http://localhost:29547";
-const RPC_L3 = process.env.RPC_L3 ?? "http://localhost:39545";
+const RPC_L2 = process.env.RPC_L2 ?? "http://localhost:7260";
+const RPC_L3 = process.env.RPC_L3 ?? "http://localhost:7270";
 
 const REPO_ROOT = path.resolve(__dirname, "../..");
 const OPSTACK_ENV =

@@ -39,8 +39,8 @@
             "command": null,
             "args": [
               "op-batcher",
-              "--l1-eth-rpc=${L3_L1_RPC:-http://l2-geth:8545}",
-              "--l2-eth-rpc=http://l3-geth:8545",
+              "--l1-eth-rpc=${L3_L1_RPC:-http://ghost-exec-l2:7260}",
+              "--l2-eth-rpc=http://ghost-exec-l3:7270",
               "--rollup-rpc=http://l3-op-node:${L3_ROLLUP_RPC_PORT:-19546}",
               "--private-key=${L3_BATCHER_KEY:-${BATCHER_KEY}}",
               "--data-availability-type=${L3_DA_TYPE:-calldata}",

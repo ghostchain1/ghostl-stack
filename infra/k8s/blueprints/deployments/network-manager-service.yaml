@@ -52,7 +52,7 @@
               },
               {
                 "name": "MONITOR_RPC_L3",
-                "value": "${MONITOR_RPC_L3:-http://host.docker.internal:39545}"
+                "value": "${MONITOR_RPC_L3:-http://host.docker.internal:7270}"
               },
               {
                 "name": "MONITOR_PORTS",

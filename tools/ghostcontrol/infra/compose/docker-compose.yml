@@ -47,8 +47,8 @@ services:
       - REDIS_URL=redis://ghostcontrol-redis:6379
       - GHOSTCONTROL_TOKEN=${GHOSTCONTROL_TOKEN:-}
       - L1_RPC=${L1_RPC:-http://host.docker.internal:18545}
-      - L2_RPC=${L2_RPC:-http://host.docker.internal:29547}
-      - L3_RPC=${L3_RPC:-http://host.docker.internal:39545}
+      - L2_RPC=${L2_RPC:-http://host.docker.internal:7260}
+      - L3_RPC=${L3_RPC:-http://host.docker.internal:7270}
       - GHOSTCONTROL_EVIDENCE_LOG_DIR=/evidence/logs
       - GHOSTCONTROL_INCIDENT_DB_PATH=/incidents/incidents.db
       - GHOSTCONTROL_EVENT_CYCLE_OPEN_WARN_THRESHOLD=${GHOSTCONTROL_EVENT_CYCLE_OPEN_WARN_THRESHOLD:-1}

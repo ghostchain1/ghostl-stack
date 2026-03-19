@@ -60,7 +60,7 @@ const GST: GhostNativeCurrency = {
 /** GhostChain L1 — settlement layer */
 export const GHOST_L1: GhostNetwork = {
   name:            "GhostChain",
-  chainId:         Number(process.env["L1_CHAIN_ID"] ?? 31337),
+  chainId:         Number(process.env["L1_CHAIN_ID"] ?? 14000101),
   layer:           ChainLayer.L1,
   rpcUrl:          process.env["RPC_L1"] ?? "http://localhost:18545",
   fallbackRpcUrls: [],
@@ -72,7 +72,7 @@ export const GHOST_L1: GhostNetwork = {
 /** GhostL2 — OP-Stack rollup on top of L1 */
 export const GHOST_L2: GhostNetwork = {
   name:            "GhostL2",
-  chainId:         Number(process.env["L2_CHAIN_ID"] ?? 42069),
+  chainId:         Number(process.env["L2_CHAIN_ID"] ?? 901),
   layer:           ChainLayer.L2,
   rpcUrl:          process.env["RPC_L2"] ?? "http://localhost:29547",
   fallbackRpcUrls: [],
@@ -84,7 +84,7 @@ export const GHOST_L2: GhostNetwork = {
 /** GhostL3 — App-chain / hyper-chain on top of L2 */
 export const GHOST_L3: GhostNetwork = {
   name:            "GhostL3",
-  chainId:         Number(process.env["L3_CHAIN_ID"] ?? 43069),
+  chainId:         Number(process.env["L3_CHAIN_ID"] ?? 903),
   layer:           ChainLayer.L3,
   rpcUrl:          process.env["RPC_L3"] ?? "http://localhost:39545",
   fallbackRpcUrls: [],

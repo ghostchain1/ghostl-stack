@@ -3,8 +3,8 @@ import { ghost } from "@ghostchain/sdk";
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 
 const RPC_L1 = process.env.RPC_L1 ?? "http://localhost:18545";
-const RPC_L2 = process.env.RPC_L2 ?? "http://localhost:29547";
-const RPC_L3 = process.env.RPC_L3 ?? "http://localhost:39545";
+const RPC_L2 = process.env.RPC_L2 ?? "http://localhost:7260";
+const RPC_L3 = process.env.RPC_L3 ?? "http://localhost:7270";
 
 const L1_ROLLUP_L2 = process.env.L1_ROLLUP_L2_ADDRESS!;
 const L2_ROLLUP_L3 = process.env.L2_ROLLUP_L3_ADDRESS!;

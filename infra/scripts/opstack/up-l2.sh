@@ -29,7 +29,8 @@ GATE_IMAGE="${OP_GATE_IMAGE:-local/op-gate:0.1.0}"
 L1_ORIGIN_BLOCK="${L1_ORIGIN_BLOCK:-latest}"
 ENABLE_OP_BATCHER="${ENABLE_OP_BATCHER:-auto}"
 ENABLE_OP_PROPOSER="${ENABLE_OP_PROPOSER:-auto}"
-OP_SEQUENCER_RPC="${OP_SEQUENCER_RPC:-http://localhost:9646}"
+OP_NODE_RPC="${OP_NODE_RPC:-http://localhost:${OP_NODE_PROXY_HOST_PORT:-29546}}"
+OP_SEQUENCER_RPC="${OP_SEQUENCER_RPC:-http://localhost:${OP_SEQUENCER_PROXY_HOST_PORT:-29646}}"
 L2_DATA_DIR="$OP_DIR/data/l2-geth-${L2_CHAIN_ID:-901}"
 OP_NODE_DATA_DIR="$OP_DIR/data/op-node"
 OP_SEQUENCER_DATA_DIR="$OP_DIR/data/op-sequencer"
@@ -48,6 +49,11 @@ rpc_call() {
   local params="$3"
   curl -fsS -X POST "$rpc" -H 'Content-Type: application/json' \
     --data "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"${method}\",\"params\":${params}}"
+}
+
+rollup_sync_call() {
+  local rpc="$1"
+  rpc_call "$rpc" "ghost_compat_syncStatus" '[]'
 }
 
 rpc_get_code() {
@@ -361,7 +367,7 @@ hg_docker compose "${COMPOSE_ENV_ARGS[@]}" up -d --force-recreate "${rollup_serv
 
 echo "Ensuring op-sequencer is active..."
 for i in $(seq 1 60); do
-  if rpc_call "$OP_SEQUENCER_RPC" "optimism_syncStatus" '[]' >/dev/null 2>&1; then
+  if rollup_sync_call "$OP_SEQUENCER_RPC" >/dev/null 2>&1; then
     break
   fi
   sleep 1
@@ -373,7 +379,7 @@ done
 
 SEQ_ACTIVE="$(rpc_call "$OP_SEQUENCER_RPC" "admin_sequencerActive" '[]' | jq -r '.result // empty' | tr '[:upper:]' '[:lower:]' || true)"
 if [ "$SEQ_ACTIVE" != "true" ]; then
-  SEQ_UNSAFE_HASH="$(rpc_call "$OP_SEQUENCER_RPC" "optimism_syncStatus" '[]' | jq -r '.result.unsafe_l2.hash // empty' || true)"
+  SEQ_UNSAFE_HASH="$(rollup_sync_call "$OP_SEQUENCER_RPC" | jq -r '.result.unsafe_l2.hash // empty' || true)"
   if [ -z "$SEQ_UNSAFE_HASH" ] || [ "$SEQ_UNSAFE_HASH" = "null" ] || [ "$SEQ_UNSAFE_HASH" = "0x0000000000000000000000000000000000000000000000000000000000000000" ]; then
     SEQ_UNSAFE_HASH="$(rpc_call "$HOST_L2_RPC" "eth_getBlockByNumber" '["latest", false]' | jq -r '.result.hash // empty' || true)"
   fi

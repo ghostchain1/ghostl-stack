@@ -237,8 +237,8 @@ export class StarlinkAdapter {
   /** Devnet defaults */
   static devnet(): StarlinkAdapter {
     return new StarlinkAdapter({
-      paymentsRpc:             'http://localhost:39545',
-      relayRpc:                'http://localhost:29547',
+      paymentsRpc:             'http://localhost:7270',
+      relayRpc:                'http://localhost:7260',
       relayRegistryAddress:    '0x0000000000000000000000000000000000020001',
       bandwidthPaymentAddress: '0x0000000000000000000000000000000000020002',
     });

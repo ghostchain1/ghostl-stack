@@ -117,8 +117,8 @@ async function main() {
     ? BigInt(process.env.DEPLOY_PRIORITY_FEE_PER_GAS)
     : undefined;
   const l1Rpc = process.env.RPC_L1 ?? "http://localhost:18545";
-  const l2Rpc = process.env.RPC_L2 ?? "http://localhost:29547";
-  const l3Rpc = process.env.RPC_L3 ?? "http://localhost:39545";
+  const l2Rpc = process.env.RPC_L2 ?? "http://localhost:7260";
+  const l3Rpc = process.env.RPC_L3 ?? "http://localhost:7270";
   const l2ChainId = Number(process.env.L2_CHAIN_ID ?? "901");
   const l3ChainId = Number(process.env.L3_CHAIN_ID ?? "902");
   const challengePeriodSeconds = Number(process.env.CHALLENGE_PERIOD_SECONDS ?? "30");

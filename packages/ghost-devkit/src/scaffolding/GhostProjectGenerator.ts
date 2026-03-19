@@ -74,7 +74,7 @@ optimizer_runs   = 200
   private ghostConfig(name: string, network: string): string {
     return JSON.stringify({
       network,
-      rpc: { l1: "http://127.0.0.1:18545", l2: "http://127.0.0.1:29547", l3: "http://127.0.0.1:39545" },
+      rpc: { l1: "http://127.0.0.1:18545", l2: "http://127.0.0.1:7260", l3: "http://127.0.0.1:7270" },
       deployment: { confirmations: 1, gasMultiplier: 1.2 },
       foundry: { projectRoot: ".", outDir: "contracts/out", scriptDir: "contracts/script" },
       validator: { minPeers: 2, restartOnLowPeers: true },

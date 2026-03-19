@@ -642,7 +642,7 @@ function recommendFix(incidents) {
   if (!incidents.length) return "";
   if (incidents.includes(LAYER_RPC_INCIDENT)) return `Check ${TARGET_LAYER} RPC proxy/container health, restart node if needed.`;
   if (incidents.includes(PARENT_RPC_INCIDENT)) return `Check ${TARGET_LAYER} parent RPC and network connectivity.`;
-  if (incidents.includes("op_node_unreachable")) return "Check op-node health and restart if needed.";
+  if (incidents.includes("op_node_unreachable")) return "Check rollup RPC proxy and op-node health, then restart the affected service if needed.";
   if (incidents.includes("syncing")) return "Node syncing; verify disk IO and peer connectivity.";
   if (incidents.includes(LAYER_HEAD_STALE)) return `Investigate ${TARGET_LAYER} node lag; check CPU/memory and peer count.`;
   if (incidents.includes(PARENT_HEAD_STALE)) return `Investigate ${TARGET_LAYER} parent RPC lag and op-node derivation.`;
@@ -712,8 +712,9 @@ async function loop() {
 
     if (OP_NODE_RPC_URL) {
       try {
-        const status = await rpcRequest(OP_NODE_RPC_URL, "optimism_syncStatus");
-        const headL1Ts = parseHexNumber(status?.head_l1?.timestamp, 0);
+        const status = await rpcRequest(OP_NODE_RPC_URL, "ghost_compat_syncStatus");
+        const headL1 = status?.head_l1 ?? status?.headL1;
+        const headL1Ts = parseHexNumber(headL1?.timestamp, 0);
         if (headL1Ts > 0) {
           l1HeadLag = Math.max(0, nowSec - headL1Ts);
         } else if (headLag > 0) {
@@ -969,6 +970,7 @@ app.use((err, _req, res, _next) => {
 });
 
 async function init() {
+  try {
     const server = app.listen(PORT, "0.0.0.0", () => {
       logEvent("info", "ai_monitor_listen", {
         port: PORT,

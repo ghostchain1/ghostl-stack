@@ -6,8 +6,8 @@
  * memory / event system for pattern analysis and anomaly detection.
  *
  * Chain IDs:  L1 = 14000101 (port 18545)
- *             L2 = 901      (port 29547)
- *             L3 = 903      (port 39545)
+ *             L2 = 901      (port 29547 — canonical GhostL2 RPC)
+ *             L3 = 903      (port 39545 — canonical GhostL3 RPC)
  */
 
 import { store_event } from "../memory_engine.js";
@@ -166,7 +166,7 @@ export function classifyTransaction(
       kind      = "transfer";
       riskScore = 0.15;
     } else if (selector === "0x3687011a" || selector === "0x9ff0c4e5") {
-      // depositTransaction / finalizeWithdrawalTransaction (OP Stack)
+      // Canonical cross-layer bridge relay selectors retained for compat traffic
       kind      = "bridge";
       riskScore = 0.25;
     } else if (selector === "0x56781388") {

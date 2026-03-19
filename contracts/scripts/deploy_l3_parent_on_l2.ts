@@ -204,7 +204,7 @@ async function artifactRecord(
 }
 
 async function main() {
-  const rpc = process.env.RPC_L2 ?? "http://localhost:29547";
+  const rpc = process.env.RPC_L2 ?? "http://localhost:7260";
   const provider = new ghost.JsonRpcProvider(rpc, "L2");
   const privateKey = normalizePrivateKey(
     getEnv("L3_PARENT_DEPLOYER_PRIVATE_KEY", process.env.DEPLOYER_PRIVATE_KEY)

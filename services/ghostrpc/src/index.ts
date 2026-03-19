@@ -17,8 +17,8 @@ import cors from 'cors';
 
 const GHOST_NODES = {
   l1: { url: process.env.GHOST_L1_RPC ?? 'http://localhost:18545', chainId: 14000101 },
-  l2: { url: process.env.GHOST_L2_RPC ?? 'http://localhost:29547', chainId: 901      },
-  l3: { url: process.env.GHOST_L3_RPC ?? 'http://localhost:39545', chainId: 903      },
+  l2: { url: process.env.GHOST_L2_RPC ?? 'http://localhost:7260', chainId: 901      },
+  l3: { url: process.env.GHOST_L3_RPC ?? 'http://localhost:7270', chainId: 903      },
 } as const;
 
 type Layer = keyof typeof GHOST_NODES;

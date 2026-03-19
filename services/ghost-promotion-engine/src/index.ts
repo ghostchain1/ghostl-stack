@@ -33,11 +33,11 @@
  *   GAIS_URL                GAIS REST API URL               (default: http://localhost:9100)
  *   GAIS_API_TOKEN          GAIS write-endpoint token       (required for VM control proposals)
  *   RPC_L1_URL              L1 testnet RPC                  (default: http://10.50.99.71:18545)
- *   RPC_L2_URL              L2 testnet RPC                  (default: http://10.50.99.77:29547)
- *   RPC_L3_URL              L3 testnet RPC                  (default: http://10.50.99.79:39545)
+ *   RPC_L2_URL              L2 testnet RPC                  (default: http://10.50.99.77:7260)
+ *   RPC_L3_URL              L3 testnet RPC                  (default: http://10.50.99.79:7270)
  *   MAINNET_L1_URL          L1 mainnet RPC                  (default: http://10.50.99.70:18545)
- *   MAINNET_L2_URL          L2 mainnet RPC                  (default: http://10.50.99.76:29547)
- *   MAINNET_L3_URL          L3 mainnet RPC                  (default: http://10.50.99.78:39545)
+ *   MAINNET_L2_URL          L2 mainnet RPC                  (default: http://10.50.99.76:7260)
+ *   MAINNET_L3_URL          L3 mainnet RPC                  (default: http://10.50.99.78:7270)
  *   RELEASE_TIMEOUT_MS      max ms for release workflows    (default: 1800000)
  *   TESTNET_SSH_TARGET      optional ssh target for pushing sealed release
  *   TESTNET_HOSTNAME_REGEX  remote hostname guard           (default: testnet)
@@ -79,11 +79,11 @@ const CHAIN_L3 = 903;
 
 // Testnet RPC endpoints (static IPs from GAIS vm_manager.py)
 const RPC_TESTNET_L1 = (process.env.RPC_L1_URL      ?? 'http://10.50.99.71:18545').replace(/\/$/, '');
-const RPC_TESTNET_L2 = (process.env.RPC_L2_URL      ?? 'http://10.50.99.77:29547').replace(/\/$/, '');
-const RPC_TESTNET_L3 = (process.env.RPC_L3_URL      ?? 'http://10.50.99.79:39545').replace(/\/$/, '');
+const RPC_TESTNET_L2 = (process.env.RPC_L2_URL      ?? 'http://10.50.99.77:7260').replace(/\/$/, '');
+const RPC_TESTNET_L3 = (process.env.RPC_L3_URL      ?? 'http://10.50.99.79:7270').replace(/\/$/, '');
 const RPC_MAINNET_L1 = (process.env.MAINNET_L1_URL  ?? 'http://10.50.99.70:18545').replace(/\/$/, '');
-const RPC_MAINNET_L2 = (process.env.MAINNET_L2_URL  ?? 'http://10.50.99.76:29547').replace(/\/$/, '');
-const RPC_MAINNET_L3 = (process.env.MAINNET_L3_URL  ?? 'http://10.50.99.78:39545').replace(/\/$/, '');
+const RPC_MAINNET_L2 = (process.env.MAINNET_L2_URL  ?? 'http://10.50.99.76:7260').replace(/\/$/, '');
+const RPC_MAINNET_L3 = (process.env.MAINNET_L3_URL  ?? 'http://10.50.99.78:7270').replace(/\/$/, '');
 
 const REPO_ROOT  = process.env.REPO_PATH ?? '/home/ghost/ghostl-stack';
 const STATE_FILE = path.join(REPO_ROOT, '.tmp', 'promotion_state.json');

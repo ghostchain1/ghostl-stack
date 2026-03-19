@@ -74,13 +74,14 @@ L3_CHAIN_ID=903
 
 # ── L3 ports (l3-geth) ────────────────────────────────────────────────────────
 L3_GETH_HTTP_PORT=39545
-L3_GETH_WS_PORT=39546
+L3_GETH_WS_PORT=39548
 L3_GETH_AUTH_PORT=39551
 L3_GETH_P2P_PORT=30307
 L3_GETH_METRICS_PORT=39660
 
-# ── L3 ports (l3-op-node) ─────────────────────────────────────────────────────
+# ── L3 ports (rollup compat proxy + l3-op-node) ───────────────────────────────
 L3_OP_NODE_RPC_PORT=39546
+L3_OP_NODE_DIRECT_RPC_PORT=39646
 L3_ROLLUP_RPC_PORT=19546
 L3_ROLLUP_RPC_HOST_PORT=39546
 L3_OP_NODE_METRICS_PORT=39661
@@ -98,11 +99,11 @@ L3_PROPOSER_METRICS_PORT=8302
 L3_METRICS_PROPOSER_HOST_PORT=39302
 
 # ── Settlement — L2 this L3 settles into ──────────────────────────────────────
-# L2 VM ${L2_VM_IP} — op-geth HTTP for eth calls, op-node for internal rollup
-# RPC. The canonical direct GhostL2 host RPC remains :29547.
+# L2 VM ${L2_VM_IP} — op-geth HTTP for eth calls, rollup compat proxy for
+# internal rollup RPC. The canonical direct GhostL2 host RPC remains :29547.
 RPC_SETTLEMENT=http://${L2_VM_IP}:29547
 L2_RPC=http://${L2_VM_IP}:29547
-L2_WS=ws://${L2_VM_IP}:29546
+L2_WS=ws://${L2_VM_IP}:29548
 L2_OP_NODE_RPC=http://${L2_VM_IP}:29546
 L2_CHAIN_ID=901
 
@@ -227,7 +228,7 @@ sync_check() {
   local res
   res=\$(curl -sSf --max-time 6 -X POST "\$url" \\
     -H "Content-Type: application/json" \\
-    -d '{"jsonrpc":"2.0","id":1,"method":"optimism_syncStatus","params":[]}' 2>/dev/null || echo "")
+    -d '{"jsonrpc":"2.0","id":1,"method":"ghost_compat_syncStatus","params":[]}' 2>/dev/null || echo "")
   if echo "\$res" | grep -q '"result"'; then
     echo "  OK   \${name} sync OK"
     (( ok++ )) || true
@@ -239,7 +240,7 @@ sync_check() {
 
 echo "=== GhostL3 health [${ENV}] \$(date -u +%H:%M:%SZ) ==="
 rpc_check  "L3 l3-geth    :39545" "http://localhost:39545"
-sync_check "L3 l3-op-node :39546" "http://localhost:39546"
+sync_check "L3 rollup proxy :39546" "http://localhost:39546"
 rpc_check  "L2 settle     :29547" "http://${L2_VM_IP}:29547"
 
 echo "--- ok=\${ok} fail=\${fail} ---"
@@ -281,7 +282,8 @@ log "  ENV         : ${ENV}"
 log "  VM IP       : ${VM_IP}"
 log "  L2 settle   : http://${L2_VM_IP}:29547"
 log "  L3 RPC      : http://${VM_IP}:39545"
-log "  L3 op-node  : http://${VM_IP}:39546"
+log "  L3 rollup proxy : http://${VM_IP}:39546"
+log "  L3 op-node direct: http://${VM_IP}:39646"
 log "  Service     : sudo journalctl -u ${SVC_NAME} -f"
 log "  Health      : sudo ${HEALTH_BIN}"
 log ""

@@ -20,8 +20,8 @@ interface ChainEndpoint { url: string; chain: ChainLayer }
 function getEndpoints(): ChainEndpoint[] {
   return [
     { url: process.env.L1_RPC_URL ?? 'http://localhost:18545', chain: 'l1' },
-    { url: process.env.L2_RPC_URL ?? 'http://localhost:29547', chain: 'l2' },
-    { url: process.env.L3_RPC_URL ?? 'http://localhost:39545', chain: 'l3' },
+    { url: process.env.L2_RPC_URL ?? 'http://localhost:7260', chain: 'l2' },
+    { url: process.env.L3_RPC_URL ?? 'http://localhost:7270', chain: 'l3' },
   ];
 }
 

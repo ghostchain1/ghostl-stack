@@ -143,11 +143,11 @@ services:
       CONTROL_PLANE_HMAC_SECRET: "${CONTROL_PLANE_HMAC_SECRET:?CONTROL_PLANE_HMAC_SECRET is required}"
       # ── Autonomous RPC pool endpoint lists (comma-separated) ──
       GHOSTCHAIN_L1_RPC: "${GHOSTCHAIN_L1_RPC:-http://host.docker.internal:18545}"
-      GHOSTCHAIN_L2_RPC: "${GHOSTCHAIN_L2_RPC:-http://l2-geth:8545}"
-      GHOSTCHAIN_L3_RPC: "${GHOSTCHAIN_L3_RPC:-http://l3-geth:8545}"
+      GHOSTCHAIN_L2_RPC: "${GHOSTCHAIN_L2_RPC:-http://host.docker.internal:29547}"
+      GHOSTCHAIN_L3_RPC: "${GHOSTCHAIN_L3_RPC:-http://host.docker.internal:39545}"
       GHOST_L1_RPC_URLS: "${GHOST_L1_RPC_URLS:-http://host.docker.internal:18545}"
-      GHOST_L2_RPC_URLS: "${GHOST_L2_RPC_URLS:-http://l2-geth:8545}"
-      GHOST_L3_RPC_URLS: "${GHOST_L3_RPC_URLS:-http://l3-geth:8545}"
+      GHOST_L2_RPC_URLS: "${GHOST_L2_RPC_URLS:-http://host.docker.internal:29547}"
+      GHOST_L3_RPC_URLS: "${GHOST_L3_RPC_URLS:-http://host.docker.internal:39545}"
       # ── Allow services using ghost-sdk GhostBrainAiEngine to auto-discover ──
       GHOSTBRAIN_CORE_URL: "${GHOSTBRAIN_CORE_URL:-http://ghostbrain-core:7900}"
     volumes:
@@ -579,8 +579,8 @@ services:
       GHOSTBRAIN_ORCHESTRATOR_PORT: "7895"
       # GhostChain RPC endpoints (correct ports per routing law)
       GHOST_L1_RPC_URL: "${GHOST_L1_RPC_URL:-http://host.docker.internal:18545}"
-      GHOST_L2_RPC_URL: "${GHOST_L2_RPC_URL:-http://l2-geth:8545}"
-      GHOST_L3_RPC_URL: "${GHOST_L3_RPC_URL:-http://l3-geth:8545}"
+      GHOST_L2_RPC_URL: "${GHOST_L2_RPC_URL:-http://host.docker.internal:29547}"
+      GHOST_L3_RPC_URL: "${GHOST_L3_RPC_URL:-http://host.docker.internal:39545}"
       # Cosmos LCD (validator health via staking module)
       GHOST_L1_LCD_URL: "${GHOST_L1_LCD_URL:-http://host.docker.internal:1317}"
       # Governance signing relay — proposals forwarded here, not executed inline

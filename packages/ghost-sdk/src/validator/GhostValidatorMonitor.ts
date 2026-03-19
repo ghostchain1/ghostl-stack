@@ -49,9 +49,9 @@ export class GhostValidatorMonitor {
 
     try {
       const [block, peers, syncing] = await Promise.all([
-        this._rpc<string>(rpcUrl, "eth_blockNumber"),
+        this._rpc<string>(rpcUrl, "ghost_blockNumber"),
         this._rpc<string>(rpcUrl, "net_peerCount"),
-        this._rpc<boolean | { startingBlock: string }>(rpcUrl, "eth_syncing"),
+        this._rpc<boolean | { startingBlock: string }>(rpcUrl, "ghost_syncing"),
       ]);
 
       const blockNum   = block  ? parseInt(block,  16) : null;
@@ -92,8 +92,8 @@ export class GhostValidatorMonitor {
    */
   async blockRate(rpcUrl: string, lookbackSeconds = 60): Promise<number> {
     const [latestHex, earlyHex] = await Promise.all([
-      this._rpc<string>(rpcUrl, "eth_blockNumber"),
-      // We use `eth_getBlockByNumber` with a lookback offset
+      this._rpc<string>(rpcUrl, "ghost_blockNumber"),
+      // Placeholder for a future historical lookback probe.
       Promise.resolve("0x0"),
     ]);
 
@@ -101,7 +101,7 @@ export class GhostValidatorMonitor {
     // Estimate by polling two block numbers separated by real time
     const start = Date.now();
     await new Promise(r => setTimeout(r, Math.min(lookbackSeconds * 1000, 5000)));
-    const laterHex = await this._rpc<string>(rpcUrl, "eth_blockNumber");
+    const laterHex = await this._rpc<string>(rpcUrl, "ghost_blockNumber");
     const later    = parseInt(laterHex, 16);
     const elapsed  = (Date.now() - start) / 1000; // seconds
 

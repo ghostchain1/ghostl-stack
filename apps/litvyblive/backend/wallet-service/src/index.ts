@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { v4 as uuid } from 'uuid';
 import Database from 'better-sqlite3';
 import Redis from 'ioredis';
-import { JsonRpcProvider, formatEther } from '@ghostchain/sdk';
+import { ethers } from 'ethers';
 import { mkdirSync } from 'fs';
 import { createLogger, transports, format } from 'winston';
 
@@ -15,7 +15,7 @@ const PORT       = Number(process.env.PORT           ?? 7015);
 const JWT_SECRET = process.env.JWT_SECRET            ?? 'litvyblive-dev-secret';
 const DATA_DIR   = process.env.DATA_DIR              ?? '/tmp/litvyblive/wallet';
 const REDIS_URL  = process.env.REDIS_URL             ?? 'redis://localhost:6379';
-const GHOST_L3_RPC = process.env.GHOST_L3_RPC        ?? 'http://localhost:39545';
+const GHOST_L3_RPC = process.env.GHOST_L3_RPC        ?? 'http://localhost:7270';
 const GHOST_L3_CHAIN_ID = 903;
 
 const log = createLogger({
@@ -50,9 +50,9 @@ db.exec(`
 `);
 
 // GhostL3 JSON-RPC provider (used for on-chain balance reads)
-let provider: JsonRpcProvider | undefined;
+let provider: ethers.JsonRpcProvider | undefined;
 try {
-  provider = new JsonRpcProvider(GHOST_L3_RPC, { chainId: GHOST_L3_CHAIN_ID, name: 'ghostl3' });
+  provider = new ethers.JsonRpcProvider(GHOST_L3_RPC, { chainId: GHOST_L3_CHAIN_ID, name: 'ghostl3' });
 } catch {
   log.warn('GhostL3 RPC unavailable — using ledger balances only');
 }
@@ -102,7 +102,7 @@ app.get('/balance/onchain/:address', async (req, res) => {
   }
   try {
     const balWei = await provider?.getBalance(req.params['address']);
-    const balGst = balWei ? Number(formatEther(balWei)) : null;
+    const balGst = balWei ? Number(ethers.formatEther(balWei)) : null;
     res.json({ address: req.params['address'], gstBalance: balGst, chainId: GHOST_L3_CHAIN_ID });
   } catch {
     res.status(503).json({ error: 'GhostL3 RPC unreachable' });

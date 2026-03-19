@@ -27,7 +27,7 @@ function isOnCooldown(containerName: string): boolean {
 /**
  * Restart a node container by name.
  *
- * @param containerName  Exact Docker container name (e.g. "ghostchain-l1" or "ghost-l2-op-node")
+ * @param containerName  Exact Docker container name (e.g. "ghostchain-l1" or "ghost-exec-l2")
  * @returns ActionResult indicating success or failure
  */
 export async function restartNode(containerName: string): Promise<ActionResult> {

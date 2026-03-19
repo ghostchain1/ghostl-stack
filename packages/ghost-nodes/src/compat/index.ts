@@ -13,6 +13,13 @@
  *   import { GhostJsonRpcProvider } from "@ghostchain/ghost-nodes/compat";
  */
 
+export {
+  GhostRPCCompatMethod,
+  GhostRPCLegacyRollupMethod,
+  type GhostRPCCompatMethodName,
+  type GhostRPCLegacyRollupMethodName,
+} from "../rpc/GhostRPCMethod.js";
+
 // Primitive helpers and types
 export {
   toBigInt, toNumber, toBytes, toHexString,

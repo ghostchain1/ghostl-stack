@@ -154,9 +154,9 @@ export class GhostValidatorController {
     const checkedAt = new Date().toISOString();
     try {
       const [block, peers, syncing] = await Promise.all([
-        this._rpc<string>(node.rpcUrl, "eth_blockNumber"),
+        this._rpc<string>(node.rpcUrl, "ghost_blockNumber"),
         this._rpc<string>(node.rpcUrl, "net_peerCount"),
-        this._rpc<boolean | { startingBlock: string }>(node.rpcUrl, "eth_syncing"),
+        this._rpc<boolean | { startingBlock: string }>(node.rpcUrl, "ghost_syncing"),
       ]);
 
       const blockNumber = block  ? parseInt(block, 16)  : null;

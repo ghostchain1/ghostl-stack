@@ -1,5 +1,5 @@
 /**
- * L2Client — GhostChain L2 (OP Stack rollup, chainId 901) client.
+ * L2Client — GhostChain L2 (chainId 901) client.
  */
 
 import { GhostPublicClient } from "../clients/GhostPublicClient.js";

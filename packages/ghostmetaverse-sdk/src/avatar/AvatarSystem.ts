@@ -6,7 +6,7 @@
  * XP level, position in the metaverse, and equipped wearables.
  */
 
-const L3_RPC            = 'http://localhost:39545';
+const L3_RPC            = 'http://localhost:7270';
 const AVATAR_REGISTRY   = '0x0000000000000000000000000000000000010002';
 
 export interface GhostAvatarModel {
@@ -227,6 +227,6 @@ export class AvatarSystem {
   }
 
   static devnet(): AvatarSystem {
-    return new AvatarSystem('http://localhost:39545');
+    return new AvatarSystem('http://localhost:7270');
   }
 }

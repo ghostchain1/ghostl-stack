@@ -25,10 +25,15 @@ import {
   type FeeData,
 } from "@ghostchain/sdk";
 import { randomUUID } from "crypto";
-import type { GhostLayer }      from "./Types.js";
+import type { GhostLayer, GhostTargetLayer }      from "./Types.js";
 import type { RpcEndpoint }     from "../config.js";
 import type { TxRouteDecision } from "./Types.js";
 import { GhostBrainWS }        from "../ai/GhostBrainWS.js";
+import {
+  buildDeterministicRoutePlan,
+  buildRelayTransaction,
+  normalizeRouteDecision,
+} from "./routing.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Public config types
@@ -104,13 +109,13 @@ export interface GhostGuardResult {
 
 export interface GhostSendResult {
   hash:          string;
-  routeDecision: TxRouteDecision | { executeOn: GhostLayer; fallback?: boolean };
+  routeDecision: TxRouteDecision;
 }
 
 export interface GhostCrossLayerResult {
   sourceTxHash: string;
   targetLayer:  GhostLayer;
-  routePlan:    TxRouteDecision["plan"] | null;
+  routePlan:    TxRouteDecision["plan"];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -249,6 +254,14 @@ export class GhostJsonRpcProvider extends JsonRpcProvider {
     return json.result;
   }
 
+  private async sendTransactionRequest(tx: TransactionRequest): Promise<string> {
+    try {
+      return await this.send("ghost_sendTransaction", [tx]) as string;
+    } catch {
+      return await this.send("eth_sendTransaction", [tx]) as string;
+    }
+  }
+
   // ── GhostBrain lazy connect ───────────────────────────────────────────────
 
   private async ensureBrain(): Promise<GhostBrainWS | undefined> {
@@ -264,25 +277,47 @@ export class GhostJsonRpcProvider extends JsonRpcProvider {
 
   /**
    * Ask GhostBrain for a routing decision.
-   * Falls back to `{ executeOn: this.layer, fallback: true }` if offline.
+   * Falls back to a deterministic canonical route plan if GhostBrain is offline.
    */
   async routeTransaction(
-    tx: TransactionRequest
-  ): Promise<TxRouteDecision | { executeOn: GhostLayer; fallback?: boolean }> {
+    tx: TransactionRequest,
+    opts?: { targetLayer?: GhostTargetLayer; intent?: string },
+  ): Promise<TxRouteDecision> {
+    const desiredTargetLayer = opts?.targetLayer ?? this.layer;
+    const fallbackPlan = buildDeterministicRoutePlan({
+      from: this.layer,
+      targetLayer: desiredTargetLayer,
+      reason: "Ghost provider deterministic fallback routing",
+    });
     const brain = await this.ensureBrain().catch(() => undefined);
-    if (!brain) return { executeOn: this.layer };
+    if (!brain) {
+      return {
+        plan: fallbackPlan,
+        riskScore: fallbackPlan.requiresMessaging ? 0.25 : 0.05,
+        notes: ["GhostBrain unavailable — using deterministic routing."],
+      };
+    }
 
     const selector = typeof tx.data === "string" && tx.data.length >= 10
       ? tx.data.slice(0, 10) : "0x";
 
     try {
-      return await brain.request<TxRouteDecision>("ghost.route.decide", {
-        from: this.layer, to: tx.to,
+      const out = await brain.request<TxRouteDecision>("ghost.route.decide", {
+        from: this.layer,
+        targetLayer: desiredTargetLayer,
+        targetAddress: tx.to,
+        to: tx.to,
+        intent: opts?.intent ?? (desiredTargetLayer === this.layer ? "contract_call" : "bridge"),
         value: tx.value?.toString() ?? "0",
         selector, data: tx.data ?? "0x",
       }, { timeoutMs: 2_500 });
+      return normalizeRouteDecision(out, fallbackPlan);
     } catch {
-      return { executeOn: this.layer, fallback: true };
+      return {
+        plan: fallbackPlan,
+        riskScore: fallbackPlan.requiresMessaging ? 0.25 : 0.05,
+        notes: ["GhostBrain route request failed — using deterministic routing."],
+      };
     }
   }
 
@@ -290,13 +325,11 @@ export class GhostJsonRpcProvider extends JsonRpcProvider {
    * Route + broadcast a transaction. Logs the AI routing plan.
    */
   async ghostSendTransaction(tx: TransactionRequest): Promise<GhostSendResult> {
-    const routeDecision = await this.routeTransaction(tx);
-    if ("plan" in routeDecision && routeDecision.plan) {
-      const risk = ((routeDecision as TxRouteDecision).riskScore * 100).toFixed(0);
-      // eslint-disable-next-line no-console
-      console.log(`[GhostAI Route] ${routeDecision.plan.path.join(" → ")} (risk ${risk}%)`);
-    }
-    const hash = await this.send("eth_sendTransaction", [tx]) as string;
+    const routeDecision = await this.routeTransaction(tx, { targetLayer: this.layer });
+    const risk = (routeDecision.riskScore * 100).toFixed(0);
+    // eslint-disable-next-line no-console
+    console.log(`[GhostAI Route] ${routeDecision.plan.path.join(" → ")} (risk ${risk}%)`);
+    const hash = await this.sendTransactionRequest(tx);
     return { hash, routeDecision };
   }
 
@@ -453,7 +486,14 @@ export class GhostJsonRpcProvider extends JsonRpcProvider {
       try {
         const br = await brain.request<{ riskScore?: number; findings?: string[] }>(
           "ghost.route.decide",
-          { from: this.layer, to: tx.to, selector, value: tx.value?.toString() ?? "0" },
+          {
+            from: this.layer,
+            targetLayer: this.layer,
+            targetAddress: tx.to,
+            to: tx.to,
+            selector,
+            value: tx.value?.toString() ?? "0",
+          },
           { timeoutMs: 2_000 }
         );
         if (typeof br.riskScore === "number")     riskScore = Math.max(riskScore, br.riskScore);
@@ -468,31 +508,17 @@ export class GhostJsonRpcProvider extends JsonRpcProvider {
 
   /**
    * Initiate a cross-layer transaction.
-   * GhostBrain returns the routing plan; the caller wires actual hop execution
-   * via HopExecutor with the OP Stack messenger addresses.
+   * GhostBrain returns the routing plan with explicit target-layer intent, and the provider
+   * submits the outermost Ghost relay envelope using the configured gateway addresses.
    */
   async crossLayerSend(
     tx:          TransactionRequest,
     targetLayer: GhostLayer
   ): Promise<GhostCrossLayerResult> {
-    const selector = typeof tx.data === "string" && tx.data.length >= 10
-      ? tx.data.slice(0, 10) : "0x";
-
-    let routePlan: TxRouteDecision["plan"] | null = null;
-    const brain = await this.ensureBrain().catch(() => undefined);
-    if (brain) {
-      try {
-        const d = await brain.request<TxRouteDecision>("ghost.route.decide", {
-          from: this.layer, to: tx.to,
-          value: tx.value?.toString() ?? "0",
-          selector, intent: "bridge",
-        }, { timeoutMs: 3_000 });
-        routePlan = d.plan;
-      } catch { /* proceed without plan */ }
-    }
-
-    const sourceTxHash = await this.send("eth_sendTransaction", [tx]) as string;
-    return { sourceTxHash, targetLayer, routePlan };
+    const routeDecision = await this.routeTransaction(tx, { targetLayer, intent: "bridge" });
+    const relayTx = buildRelayTransaction(routeDecision.plan, tx);
+    const sourceTxHash = await this.sendTransactionRequest(relayTx);
+    return { sourceTxHash, targetLayer, routePlan: routeDecision.plan };
   }
 
   // ── Diagnostics ───────────────────────────────────────────────────────────

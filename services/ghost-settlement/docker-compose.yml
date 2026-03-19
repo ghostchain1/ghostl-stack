@@ -1,0 +1,19 @@
+services:
+  ghost-settlement:
+    build:
+      context: ../..
+      dockerfile: services/ghost-settlement/Dockerfile
+    env_file: .env.example
+    ports:
+      - "7263:7263"
+    volumes:
+      - ghost-settlement-state:/state
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "healthcheck.sh"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  ghost-settlement-state:

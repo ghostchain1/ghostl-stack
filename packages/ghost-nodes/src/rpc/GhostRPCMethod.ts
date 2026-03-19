@@ -5,8 +5,11 @@
  * Ghost-branded JSON-RPC method constants.
  *
  * Architecture:
- *   Public API surface → Ghost-branded method names (ghost_*)
- *   Wire protocol      → Standard EVM JSON-RPC method names (eth_*, optimism_*)
+ *   Public API surface        → Ghost-branded runtime method names (ghost_*)
+ *   Compat RPC surface        → Ghost-branded compatibility names (ghost_compat_*)
+ *   Legacy compat aliases     → Ghost-branded deprecated rollup names (ghost_*)
+ *                                isolated to @ghostchain/ghost-nodes/compat
+ *   Wire protocol             → Standard EVM JSON-RPC method names (eth_*, optimism_*)
  *
  * Consumers of this module ONLY see Ghost-branded identifiers.
  * The eth_* wire names are internal to GhostRPCClient and never
@@ -16,7 +19,10 @@
  *   - No file outside packages/ghost-nodes/src/rpc/ or the compat layer
  *     should import eth_* string literals.
  *   - External consumers write: GhostRPCMethod.getBalance (ghost_getBalance)
- *   - Ghost-sdk-core handles the wire mapping transparently.
+ *   - Rollup-compat telemetry must use GhostRPCCompatMethod rather than
+ *     masquerading as the canonical Ghost runtime surface.
+ *   - Deprecated rollup aliases remain available only through the compat
+ *     subpath so the root export surface stays honest.
  */
 
 // ─── Public Ghost-branded method constants ────────────────────────────────────
@@ -78,12 +84,6 @@ export const GhostRPCMethod = Object.freeze({
   isSyncing:                 "ghost_syncing",
   getClientVersion:          "ghost_clientVersion",
 
-  // ── OP Stack (L2/L3) ─────────────────────────────────────────────────────
-  getSyncStatus:             "ghost_syncStatus",
-  getOutputAtBlock:          "ghost_outputAtBlock",
-  getRollupConfig:           "ghost_rollupConfig",
-  getSafeHeadAtL1Block:      "ghost_safeHeadAtL1Block",
-
   // ── L1 validator set ──────────────────────────────────────────────────────
   getValidators:             "ghost_getValidators",
   getSnapshot:               "ghost_getSnapshot",
@@ -95,3 +95,37 @@ export const GhostRPCMethod = Object.freeze({
 } as const);
 
 export type GhostRPCMethodName = typeof GhostRPCMethod[keyof typeof GhostRPCMethod];
+
+/**
+ * GhostRPCCompatMethod — explicit compatibility-only rollup telemetry methods.
+ *
+ * These names exist so OP-era L2/L3 rollup RPC behavior can be called through
+ * a clearly-marked compatibility boundary while the Ghost-native runtime is
+ * being built out.
+ */
+export const GhostRPCCompatMethod = Object.freeze({
+  getSyncStatus:        "ghost_compat_syncStatus",
+  getOutputAtBlock:     "ghost_compat_outputAtBlock",
+  getRollupConfig:      "ghost_compat_rollupConfig",
+  getSafeHeadAtL1Block: "ghost_compat_safeHeadAtL1Block",
+} as const);
+
+export type GhostRPCCompatMethodName =
+  typeof GhostRPCCompatMethod[keyof typeof GhostRPCCompatMethod];
+
+/**
+ * GhostRPCLegacyRollupMethod — deprecated pre-compat rollup aliases.
+ *
+ * These names are intentionally NOT exported from the package root.
+ * Only import them from `@ghostchain/ghost-nodes/compat` when bridging older
+ * consumers that have not yet migrated to `GhostRPCCompatMethod`.
+ */
+export const GhostRPCLegacyRollupMethod = Object.freeze({
+  getSyncStatus:        "ghost_syncStatus",
+  getOutputAtBlock:     "ghost_outputAtBlock",
+  getRollupConfig:      "ghost_rollupConfig",
+  getSafeHeadAtL1Block: "ghost_safeHeadAtL1Block",
+} as const);
+
+export type GhostRPCLegacyRollupMethodName =
+  typeof GhostRPCLegacyRollupMethod[keyof typeof GhostRPCLegacyRollupMethod];
