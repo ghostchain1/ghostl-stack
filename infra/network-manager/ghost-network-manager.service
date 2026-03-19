@@ -4,7 +4,7 @@ Documentation=https://github.com/ghostchain1/ghostl-stack/infra/network-manager/
 After=network-online.target docker.service
 Wants=network-online.target
 # Start before chain services so ports are claimed before nodes boot
-Before=ghostchaind.service op-geth-l2.service op-geth-l3.service
+Before=ghostchaind.service ghost-exec-l2.service ghost-exec-l3.service
 
 [Service]
 Type=simple

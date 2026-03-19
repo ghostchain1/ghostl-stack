@@ -3,7 +3,7 @@
  *
  * Deploys AIGuardianL1/L2/L3 to their respective chains, configures
  * them for devnet (no attestation requirements, deployer as signer),
- * and updates infra/opstack/.env + services/ghost-guard/.env.
+ * and updates services/stack.env + services/ghost-guard/.env.
  *
  * Usage:
  *   cd contracts
@@ -34,8 +34,8 @@ const RPC_L2 = process.env.RPC_L2 ?? "http://localhost:7260";
 const RPC_L3 = process.env.RPC_L3 ?? "http://localhost:7270";
 
 const REPO_ROOT = path.resolve(__dirname, "../..");
-const OPSTACK_ENV =
-  process.env.OPSTACK_ENV ?? path.join(REPO_ROOT, "infra/opstack/.env");
+const STACK_ENV =
+  process.env.STACK_ENV ?? path.join(REPO_ROOT, "services/stack.env");
 const GHOST_GUARD_ENV =
   process.env.GHOST_GUARD_ENV ?? path.join(REPO_ROOT, "services/ghost-guard/.env");
 const OUTPUT_DIR =
@@ -142,7 +142,7 @@ async function deploy(
     savedPath,
     JSON.stringify(
       {
-        network: layer === "l1" ? "anvil" : layer === "l2" ? "ghostl2Op" : "ghostl3Op",
+        network: layer === "l1" ? "anvil" : layer === "l2" ? "ghostl2" : "ghostl3",
         layer,
         contracts: [
           {
@@ -285,7 +285,7 @@ async function main() {
   };
 
   console.log("\n── Patching .env files ──");
-  await patchEnvFile(OPSTACK_ENV, patches);
+  await patchEnvFile(STACK_ENV, patches);
   await patchEnvFile(GHOST_GUARD_ENV, {
     ...patches,
     // ghost-guard reads PRIVATE_KEY not GUARD_PRIVATE_KEY
@@ -294,8 +294,7 @@ async function main() {
 
   console.log("\n✓ Done. Restart ghost-guard:");
   console.log(
-    "  docker compose -p ghostl-stack --env-file infra/opstack/.env " +
-      "-f infra/opstack/docker-compose.yml up -d --force-recreate ghost-guard"
+    "  docker compose -p ghostl-stack -f docker-compose.phase3.yml up -d --force-recreate ghost-guard"
   );
 }
 

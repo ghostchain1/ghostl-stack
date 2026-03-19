@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Fund one or more addresses on the OP Stack devnet (L1 + L2; optional L3 if reachable).
+# Fund one or more addresses on the Ghost devnet (L1 + L2; optional L3 if reachable).
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)}"
-OP_ENV="$ROOT_DIR/infra/opstack/.env"
+STACK_ENV_FILE="$ROOT_DIR/services/stack.env"
+L2_ENV_FILE="$ROOT_DIR/environments/devnet/ghostl2.env"
+L3_ENV_FILE="$ROOT_DIR/environments/devnet/ghostl3.env"
 
 usage() {
   cat <<'EOF' >&2
@@ -50,17 +52,18 @@ if [ ${#addrs[@]} -eq 0 ]; then
   exit 1
 fi
 
-if [ -f "$OP_ENV" ]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$OP_ENV"
-  [ -f "$ROOT_DIR/infra/opstack/.env.secrets" ] && source "$ROOT_DIR/infra/opstack/.env.secrets"
-  set +a
-fi
+for env_file in "$STACK_ENV_FILE" "$L2_ENV_FILE" "$L3_ENV_FILE"; do
+  if [ -f "$env_file" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$env_file"
+    set +a
+  fi
+done
 
-RPC_L1="${HOST_L1_RPC:-http://localhost:18545}"
-OP_L2_RPC="${OP_L2_RPC:-${HOST_L2_RPC:-http://localhost:29547}}"
-OP_L3_RPC="${OP_L3_RPC:-${HOST_L3_RPC:-http://localhost:39545}}"
+RPC_L1="${RPC_L1:-${HOST_L1_RPC:-http://localhost:18545}}"
+RPC_L2="${RPC_L2:-${HOST_L2_RPC:-http://localhost:29547}}"
+RPC_L3="${RPC_L3:-${HOST_L3_RPC:-http://localhost:39545}}"
 
 rpc_ready() {
   local url="$1"
@@ -81,16 +84,16 @@ echo "Funding addresses on L1 (${RPC_L1})..."
 FUND_AMOUNT_GST="$amount" FUND_ADDRESSES_JSON="$fund_json" RPC_L1="$RPC_L1" \
   npx hardhat run --network anvil scripts/fund_addresses.ts >/dev/null
 
-echo "Funding addresses on L2 (${OP_L2_RPC})..."
-FUND_AMOUNT_GST="$amount" FUND_ADDRESSES_JSON="$fund_json" OP_L2_RPC="$OP_L2_RPC" \
-  npx hardhat run --network ghostl2Op scripts/fund_addresses.ts >/dev/null
+echo "Funding addresses on L2 (${RPC_L2})..."
+FUND_AMOUNT_GST="$amount" FUND_ADDRESSES_JSON="$fund_json" RPC_L2="$RPC_L2" \
+  npx hardhat run --network ghostl2 scripts/fund_addresses.ts >/dev/null
 
-if [ $fund_l3 -eq 1 ] && rpc_ready "$OP_L3_RPC"; then
-  echo "Funding addresses on L3 (${OP_L3_RPC})..."
-  FUND_AMOUNT_GST="$amount" FUND_ADDRESSES_JSON="$fund_json" OP_L3_RPC="$OP_L3_RPC" \
-    npx hardhat run --network ghostl3Op scripts/fund_addresses.ts >/dev/null
+if [ $fund_l3 -eq 1 ] && rpc_ready "$RPC_L3"; then
+  echo "Funding addresses on L3 (${RPC_L3})..."
+  FUND_AMOUNT_GST="$amount" FUND_ADDRESSES_JSON="$fund_json" RPC_L3="$RPC_L3" \
+    npx hardhat run --network ghostl3 scripts/fund_addresses.ts >/dev/null
 else
-  echo "Skipping L3 funding (disabled or RPC unreachable at $OP_L3_RPC)."
+  echo "Skipping L3 funding (disabled or RPC unreachable at $RPC_L3)."
 fi
 
 echo "Done."

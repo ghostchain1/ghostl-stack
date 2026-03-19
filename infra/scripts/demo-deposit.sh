@@ -21,6 +21,6 @@ echo "Using GUARD_POLICY_ADDRESS=$GUARD_POLICY_ADDRESS"
 echo "Sending demo deposit (amount=${DEMO_AMOUNT_GST} GST)..."
 
 cd "$ROOT_DIR/contracts"
-DEMO_AMOUNT_GST="$DEMO_AMOUNT_GST" npx hardhat run --network ghostl2Op scripts/demo_deposit.ts
+DEMO_AMOUNT_GST="$DEMO_AMOUNT_GST" npx hardhat run --network ghostl2 scripts/demo_deposit.ts
 
 echo "Tip: tail guard logs with: cd .devcontainer && docker compose logs -f ghost-guard"

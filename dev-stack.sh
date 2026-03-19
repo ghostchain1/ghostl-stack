@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# Spin up the local stack: op-stack docker services + local API/web processes.
+# Spin up the local stack: Ghost-native rollup services + local API/web processes.
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMPOSE_FILE="$ROOT/infra/opstack/docker-compose.yml"
-OPSTACK_ENV_FILE="$ROOT/infra/opstack/.env"
-OPSTACK_SECRETS_FILE="$ROOT/infra/opstack/.env.secrets"
+COMPOSE_FILE="$ROOT/docker-compose.custom-rollup.yml"
 PROJECT_NAME="ghostl-stack"
 RUN_DIR="$ROOT/.tmp/dev-stack"
 API_PID_FILE="$RUN_DIR/api.pid"
@@ -43,15 +41,11 @@ npm ci --prefer-offline
 copy_env "$ROOT/apps/api/.env.local.example" "$ROOT/apps/api/.env.local"
 copy_env "$ROOT/apps/web/.env.local.example" "$ROOT/apps/web/.env.local"
 
-echo "Starting op-stack services via docker-compose..."
-COMPOSE_ENV_ARGS=()
-if [[ -f "$OPSTACK_ENV_FILE" ]]; then
-  COMPOSE_ENV_ARGS+=(--env-file "$OPSTACK_ENV_FILE")
-fi
-if [[ -f "$OPSTACK_SECRETS_FILE" ]]; then
-  COMPOSE_ENV_ARGS+=(--env-file "$OPSTACK_SECRETS_FILE")
-fi
-hg_docker compose "${COMPOSE_ENV_ARGS[@]}" -f "$COMPOSE_FILE" --project-name "$PROJECT_NAME" up -d
+echo "Running Ghost-native preflight..."
+STRICT_SECRETS="${STRICT_SECRETS:-0}" bash "$ROOT/scripts/testnet/00-preflight.sh"
+
+echo "Starting Ghost-native rollup services via docker compose..."
+hg_docker compose -f "$COMPOSE_FILE" --project-name "$PROJECT_NAME" up -d
 
 mkdir -p "$RUN_DIR"
 

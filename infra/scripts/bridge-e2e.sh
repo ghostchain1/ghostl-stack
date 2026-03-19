@@ -154,7 +154,7 @@ case "$MODE" in
           warn "L3 tokenFactory codeLen=$(code_len "$RPC_L3_EFF" "$L3_TOKEN_FACTORY_ADDRESS") addr=$L3_TOKEN_FACTORY_ADDRESS"
           warn "L3 inbox codeLen=$(code_len "$RPC_L3_EFF" "$L3_INBOX_ADDRESS") addr=$L3_INBOX_ADDRESS"
           warn "If codeLen=0 here, the relayer is pointed at an RPC that does not have the deployed contracts."
-          warn "Fix: restart ghost-relayer on the OP Stack docker network and use docker RPCs (RPC_L3_DOCKER=http://l3-geth:8545)."
+          warn "Fix: restart ghost-relayer on the Ghost rollup network and use the canonical GhostL3 RPC wiring."
         else
           warn "Missing RPC_L3/L3_TOKEN_FACTORY_ADDRESS/L3_INBOX_ADDRESS for diagnostics (source services/stack.env)."
         fi

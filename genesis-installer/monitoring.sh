@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # GhostStack Genesis Installer — Monitoring Stack
 #
-# Starts Prometheus, Grafana, Loki, and Alertmanager from the OP Stack
-# observability compose file (infra/opstack/docker-compose.yml).
+# Starts Prometheus, Grafana, Loki, and Alertmanager from the canonical
+# Ghost observability compose file (observability/infra/docker-compose.yml).
 #
 # Ports:
 #   Prometheus  : 9090
@@ -13,7 +13,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COMPOSE_FILE="${ROOT}/infra/opstack/docker-compose.yml"
+COMPOSE_FILE="${ROOT}/observability/infra/docker-compose.yml"
 PROJECT_NAME="${COMPOSE_PROJECT_NAME:-ghostl-stack}"
 
 # shellcheck source=scripts/lib/docker.sh

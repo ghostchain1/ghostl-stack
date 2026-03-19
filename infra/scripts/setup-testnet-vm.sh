@@ -125,7 +125,7 @@ mkdir -p \
   /data/testnet/l3 \
   /data/testnet/services \
   /data/testnet/secrets/l1 \
-  /data/testnet/secrets/opstack \
+  /data/testnet/secrets/ghost-rollup \
   /data/testnet/secrets/services
 
 chown -R root:root /opt/ghoststack
@@ -134,13 +134,13 @@ chmod 755 /opt/ghoststack /opt/ghoststack/bin /opt/ghoststack/releases
 chown -R "${GHOSTSTACK_USER}:${GHOSTSTACK_USER}" /data/testnet
 chmod 750 /data/testnet /data/testnet/l1 /data/testnet/l2 /data/testnet/l3
 chmod 700 /data/testnet/secrets /data/testnet/secrets/l1 \
-          /data/testnet/secrets/opstack /data/testnet/secrets/services
+          /data/testnet/secrets/ghost-rollup /data/testnet/secrets/services
 
 # ── System ulimits ───────────────────────────────────────────────────────────
 
 log "configuring ulimits..."
 cat > /etc/security/limits.d/ghoststack.conf <<'LIMITS'
-# GhostStack — raised limits for geth / op-geth / Docker containers
+# GhostStack — raised limits for Ghost execution and container services
 ghoststack   soft   nofile   65535
 ghoststack   hard   nofile   65535
 ghoststack   soft   nproc    32768
@@ -190,11 +190,11 @@ fi
 ufw allow from "${MGMT_CIDR}" to any port 18545 comment "GhostChain L1 HTTP RPC"
 ufw allow from "${MGMT_CIDR}" to any port 18546 comment "GhostChain L1 WS RPC"
 
-# OP Stack P2P
-ufw allow 9003/tcp comment "GhostL2 op-node P2P"
-ufw allow 9003/udp comment "GhostL2 op-node P2P"
-ufw allow 9013/tcp comment "GhostL3 op-node P2P"
-ufw allow 9013/udp comment "GhostL3 op-node P2P"
+# Ghost rollup P2P
+ufw allow 9003/tcp comment "GhostL2 rollup P2P"
+ufw allow 9003/udp comment "GhostL2 rollup P2P"
+ufw allow 9013/tcp comment "GhostL3 rollup P2P"
+ufw allow 9013/udp comment "GhostL3 rollup P2P"
 
 # Metrics (Prometheus) — management CIDR only
 ufw allow from "${MGMT_CIDR}" to any port 9090 comment "Prometheus metrics"
@@ -245,8 +245,8 @@ echo "         /opt/ghoststack/releases/<id>/scripts/validate-testnet.sh"
 echo
 echo "  Secrets that must be provisioned OUT-OF-BAND (never in the release bundle):"
 echo "    /data/testnet/secrets/l1/jwtsecret           — L1 JWT (auto-generated on first deploy)"
-echo "    /data/testnet/secrets/opstack/jwt.l2.txt     — L2 JWT"
-echo "    /data/testnet/secrets/opstack/jwt.l3.txt     — L3 JWT"
+echo "    /data/testnet/secrets/ghost-rollup/jwt.l2.txt — L2 JWT"
+echo "    /data/testnet/secrets/ghost-rollup/jwt.l3.txt — L3 JWT"
 echo "    Node signer keys → /data/testnet/secrets/l1/node1.key etc."
 echo
 echo "══════════════════════════════════════════════════════════════════════"

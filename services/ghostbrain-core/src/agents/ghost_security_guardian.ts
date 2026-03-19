@@ -55,17 +55,6 @@ const GHOST_RUNTIME_ALLOWLIST = [
   "ghostl3",
 ];
 
-// Legacy OP Stack fleets are no longer part of the default runtime inventory.
-// Operators can still opt them back in while compat stacks remain active.
-const LEGACY_OPSTACK_ALLOWLIST = [
-  "op-geth",
-  "op-node",
-  "op-batcher",
-  "op-proposer",
-  "op-challenger",
-  "l3-op-node",
-];
-
 function parseCsvList(value: string): string[] {
   return value.split(",").map((entry) => entry.trim()).filter(Boolean);
 }
@@ -93,10 +82,8 @@ export class GhostSecurityGuardian {
 
   constructor(cfg: GhostSecurityGuardianConfig = {}) {
     const envList  = parseCsvList(process.env.GUARDIAN_ALLOWLIST ?? "");
-    const compatOpstack = process.env.GUARDIAN_ALLOW_OPSTACK_COMPAT === "1";
     this.allow     = new Set([
       ...GHOST_RUNTIME_ALLOWLIST,
-      ...(compatOpstack ? LEGACY_OPSTACK_ALLOWLIST : []),
       ...(cfg.allowlist ?? []),
       ...envList,
     ]);
@@ -104,7 +91,7 @@ export class GhostSecurityGuardian {
     const ms       = cfg.intervalMs     ?? Number(process.env.GUARDIAN_INTERVAL_MS ?? "30000");
     log.info(
       "ghost_security_guardian: init",
-      `intervalMs=${ms} stormMax=${this.stormMax} allowlistSize=${this.allow.size} compatOpstack=${compatOpstack ? 1 : 0}`,
+      `intervalMs=${ms} stormMax=${this.stormMax} allowlistSize=${this.allow.size}`,
     );
     this.interval  = setInterval(() => this.tick(), ms);
   }

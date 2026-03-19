@@ -68,14 +68,18 @@ RESTARTABLE_CONTAINERS=(
 GOVERNANCE_REQUIRED_CONTAINERS=(
   ghostchaind
   hermes-relayer
-  l2-geth
-  op-node
-  op-batcher
-  op-proposer
-  l3-geth
-  l3-op-node
-  l3-op-batcher
-  l3-op-proposer
+  ghost-exec-l2
+  ghost-sequencer-l2
+  ghost-deriver-l2
+  ghost-settlement-l2
+  ghost-bridge-l2
+  ghost-proof-l2
+  ghost-exec-l3
+  ghost-sequencer-l3
+  ghost-deriver-l3
+  ghost-settlement-l3
+  ghost-bridge-l3
+  ghost-proof-l3
   ghostbrain-core
   ghostbrain-agent
   ghostbrain-cluster

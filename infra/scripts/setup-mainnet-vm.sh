@@ -143,7 +143,7 @@ mkdir -p \
   /data/mainnet/l3 \
   /data/mainnet/services \
   /data/mainnet/secrets/l1 \
-  /data/mainnet/secrets/opstack \
+  /data/mainnet/secrets/ghost-rollup \
   /data/mainnet/secrets/services \
   /data/mainnet/snapshots
 
@@ -154,7 +154,7 @@ chmod 700 /opt/ghoststack/env   # contains gate addresses / HMACs
 chown -R "${GHOSTSTACK_USER}:${GHOSTSTACK_USER}" /data/mainnet
 chmod 750 /data/mainnet /data/mainnet/l1 /data/mainnet/l2 /data/mainnet/l3
 chmod 700 /data/mainnet/secrets /data/mainnet/secrets/l1 \
-          /data/mainnet/secrets/opstack /data/mainnet/secrets/services
+          /data/mainnet/secrets/ghost-rollup /data/mainnet/secrets/services
 chmod 750 /data/mainnet/snapshots
 
 # ── Governance env placeholder ───────────────────────────────────────────────
@@ -237,7 +237,7 @@ ufw allow out 18551/udp comment "GhostChain L1 P2P udp out"
 ufw allow in from "${MAINNET_MGMT_CIDR}" to any port 18545 proto tcp comment "GhostChain L1 HTTP RPC"
 ufw allow in from "${MAINNET_MGMT_CIDR}" to any port 18546 proto tcp comment "GhostChain L1 WS RPC"
 
-# OP Stack P2P — public discovery
+# Ghost rollup P2P — public discovery
 ufw allow in 9003/tcp comment "GhostL2 P2P tcp"
 ufw allow in 9003/udp comment "GhostL2 P2P udp"
 ufw allow in 9013/tcp comment "GhostL3 P2P tcp"

@@ -16,16 +16,8 @@ set -a
 source "$STACK_ENV_FILE"
 set +a
 
-OPSTACK_SECRETS="$ROOT_DIR/infra/opstack/.env.secrets"
-if [ -f "$OPSTACK_SECRETS" ]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$OPSTACK_SECRETS"
-  set +a
-fi
-
 if [ -z "${DEPLOYER_PRIVATE_KEY:-}" ]; then
-  echo "Missing DEPLOYER_PRIVATE_KEY (expected in infra/opstack/.env.secrets or env)" >&2
+  echo "Missing DEPLOYER_PRIVATE_KEY (expected in services/stack.env or env)" >&2
   exit 1
 fi
 
@@ -51,8 +43,8 @@ set +e
 ENSURE_OUT="$(DEPLOYER_PRIVATE_KEY="$DEMO_SIGNER_PRIVATE_KEY" \
   L1_TOKEN_ADDRESS="$L1_TOKEN_ADDRESS" L2_TOKEN_ADDRESS="$L2_TOKEN_ADDRESS" \
   L2_MINTABLE_ERC20_FACTORY="$L2_MINTABLE_ERC20_FACTORY" RPC_L1="http://localhost:18545" \
-  OP_L2_RPC="http://localhost:29547" \
-  npx hardhat run --network ghostl2Op --no-compile scripts/ensure_l2_mintable_erc20.ts 2>&1)"
+  RPC_L2="http://localhost:29547" \
+  npx hardhat run --network ghostl2 --no-compile scripts/ensure_l2_mintable_erc20.ts 2>&1)"
 ENSURE_RC=$?
 set -e
 if [ "$ENSURE_RC" -ne 0 ]; then
@@ -80,5 +72,5 @@ DEMO_TO="$DEMO_ACCOUNT" \
   DEPLOYER_PRIVATE_KEY="$DEMO_SIGNER_PRIVATE_KEY" npx hardhat run --network anvil --no-compile scripts/demo_l1_deposit_erc20.ts
 
 DEMO_ACCOUNT="$DEMO_ACCOUNT" L2_TOKEN_ADDRESS="$L2_TOKEN_ADDRESS" \
-  OP_L2_RPC="http://localhost:29547" \
-  DEPLOYER_PRIVATE_KEY="$DEMO_SIGNER_PRIVATE_KEY" npx hardhat run --network ghostl2Op --no-compile scripts/demo_balance_l2.ts
+  RPC_L2="http://localhost:29547" \
+  DEPLOYER_PRIVATE_KEY="$DEMO_SIGNER_PRIVATE_KEY" npx hardhat run --network ghostl2 --no-compile scripts/demo_balance_l2.ts

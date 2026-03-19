@@ -38,16 +38,8 @@ case "$RPC_L3_EFFECTIVE" in
   *host.docker.internal*) RPC_L3_EFFECTIVE="http://127.0.0.1:39545" ;;
 esac
 
-OPSTACK_SECRETS="$ROOT_DIR/infra/opstack/.env.secrets"
-if [ -f "$OPSTACK_SECRETS" ]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$OPSTACK_SECRETS"
-  set +a
-fi
-
 if [ -z "${DEPLOYER_PRIVATE_KEY:-}" ]; then
-  echo "Missing DEPLOYER_PRIVATE_KEY (expected in infra/opstack/.env.secrets or env)" >&2
+  echo "Missing DEPLOYER_PRIVATE_KEY (expected in services/stack.env, services/ghost-relayer/.env, or env)" >&2
   exit 1
 fi
 
@@ -121,7 +113,7 @@ if echo "$HEALTH_BASE" | jq -e '.observeOnly == true' >/dev/null; then
 fi
 
 cd "$ROOT_DIR/contracts"
-DEMO_AMOUNT_GST="$DEMO_AMOUNT_GST" L3_TOKEN_ADDRESS="$L3_TOKEN_ADDRESS" npx hardhat run --network ghostl3Op scripts/demo_burn_erc20_l3.ts
+DEMO_AMOUNT_GST="$DEMO_AMOUNT_GST" L3_TOKEN_ADDRESS="$L3_TOKEN_ADDRESS" npx hardhat run --network ghostl3 scripts/demo_burn_erc20_l3.ts
 
 LAST_WITHDRAW_PATH="$ROOT_DIR/.tmp/last_withdraw_erc20.json"
 EXPECTED_NONCE="$(jq -r '.nonce' "$LAST_WITHDRAW_PATH")"
@@ -212,6 +204,6 @@ if [ "$KIND" != "ERC20WithdrawReleased" ] || [ "$NONCE" != "$EXPECTED_NONCE" ] |
 fi
 
 echo "L2 balance:"
-DEMO_ACCOUNT="$DEPOSITOR" L2_TOKEN_ADDRESS="$L2_TOKEN_ADDRESS" npx hardhat run --network ghostl2Op scripts/demo_balance_l2.ts
+DEMO_ACCOUNT="$DEPOSITOR" L2_TOKEN_ADDRESS="$L2_TOKEN_ADDRESS" npx hardhat run --network ghostl2 scripts/demo_balance_l2.ts
 echo "L3 balance:"
-DEMO_ACCOUNT="$DEPOSITOR" L3_TOKEN_ADDRESS="$L3_TOKEN_ADDRESS" npx hardhat run --network ghostl3Op scripts/demo_balance_l3.ts
+DEMO_ACCOUNT="$DEPOSITOR" L3_TOKEN_ADDRESS="$L3_TOKEN_ADDRESS" npx hardhat run --network ghostl3 scripts/demo_balance_l3.ts

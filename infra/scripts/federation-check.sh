@@ -2,8 +2,15 @@
 set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-ENV_L2="${L2_ENV_FILE:-$ROOT_DIR/infra/opstack/.env}"
-ENV_L3="${L3_ENV_FILE:-$ROOT_DIR/infra/opstack/.env.l3}"
+ENV_L2="${L2_ENV_FILE:-$ROOT_DIR/environments/devnet/ghostl2.env.generated}"
+ENV_L3="${L3_ENV_FILE:-$ROOT_DIR/environments/devnet/ghostl3.env.generated}"
+
+if [ -x "$ROOT_DIR/infra/scripts/env-sync-l2.sh" ]; then
+  "$ROOT_DIR/infra/scripts/env-sync-l2.sh" >/dev/null
+fi
+if [ -x "$ROOT_DIR/infra/scripts/env-sync-l3.sh" ]; then
+  "$ROOT_DIR/infra/scripts/env-sync-l3.sh" >/dev/null
+fi
 
 if [ -f "$ENV_L2" ]; then
   set -a
@@ -22,8 +29,8 @@ HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
 HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
 HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
 
-L2_OUTPUT_ORACLE_ADDRESS="${L2_OUTPUT_ORACLE_ADDRESS:-}"
-L3_L2OO_ADDRESS="${L3_L2OO_ADDRESS:-}"
+L2_FINALITY_ORACLE_ADDRESS="${L2_FINALITY_ORACLE_ADDRESS:-${FINALITY_ORACLE_ADDRESS:-}}"
+L3_FINALITY_ORACLE_ADDRESS="${L3_FINALITY_ORACLE_ADDRESS:-${FINALITY_ORACLE_ADDRESS_L3:-}}"
 L3_PORTAL_ADDRESS="${L3_PORTAL_ADDRESS:-}"
 
 log() {
@@ -101,11 +108,11 @@ L3_PARENT_LAG=$((L2_TS - L3_TS))
 log "parent_sync_ok{layer=l2}=${L2_PARENT_LAG} (seconds behind L1)"
 log "parent_sync_ok{layer=l3}=${L3_PARENT_LAG} (seconds behind L2)"
 
-log "Checking L2 output oracle on L1"
-check_code "$HOST_L1_RPC" "$L2_OUTPUT_ORACLE_ADDRESS"
+log "Checking L2 finality oracle on L1"
+check_code "$HOST_L1_RPC" "$L2_FINALITY_ORACLE_ADDRESS"
 
-log "Checking L3 output oracle + portal on L2"
-check_code "$HOST_L2_RPC" "$L3_L2OO_ADDRESS"
+log "Checking L3 finality oracle + portal on L2"
+check_code "$HOST_L2_RPC" "$L3_FINALITY_ORACLE_ADDRESS"
 check_code "$HOST_L2_RPC" "$L3_PORTAL_ADDRESS"
 
 log "Federation check complete"

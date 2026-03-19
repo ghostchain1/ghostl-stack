@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy-ghostl3.sh — Deploy GhostL3 (chain_id=903, OP Stack, app-specific)
+# deploy-ghostl3.sh — Deploy GhostL3 custom execution services (chain_id=903)
 #
 # GhostL3 settles to GhostL2 — it NEVER talks to L1 directly.
 # L2 MUST be healthy before this script runs.
@@ -19,6 +19,16 @@ STACK_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 L2_RPC_PORT="${L2_RPC_PORT:-29547}"
 L3_RPC_PORT="${L3_RPC_PORT:-39545}"
 WAIT_TIMEOUT="${DEPLOY_WAIT_TIMEOUT:-180}"
+COMPOSE_FILE="${STACK_DIR}/docker-compose.custom-rollup.yml"
+PROJECT_NAME="${COMPOSE_PROJECT_NAME:-ghostl-stack}"
+L3_SERVICES=(
+  ghost-exec-l3
+  ghost-sequencer-l3
+  ghost-deriver-l3
+  ghost-settlement-l3
+  ghost-bridge-l3
+  ghost-proof-l3
+)
 
 log() { echo "[deploy-ghostl3] $*"; }
 die() { log "ERROR: $*" >&2; exit 1; }
@@ -37,69 +47,39 @@ if ! curl -sf \
 fi
 log "L2 pre-check: OK"
 
-# ── Locate L3 compose file ────────────────────────────────────────────────────
-
-COMPOSE_FILE=""
-CANDIDATE_FILES=(
-  "${STACK_DIR}/infra/opstack/docker-compose.l3.yml"
-  "${STACK_DIR}/infra/opstack/docker-compose.yml"
-)
-
-for f in "${CANDIDATE_FILES[@]}"; do
-  if [[ -f "$f" ]]; then
-    if grep -q "ghostl3\|ghost-l3\|l3" "$f" 2>/dev/null; then
-      COMPOSE_FILE="$f"
-      break
+wait_for_http() {
+  local url="$1"
+  local label="$2"
+  local deadline=$(( $(date +%s) + WAIT_TIMEOUT ))
+  while true; do
+    if curl -sf --max-time 5 "$url" >/dev/null 2>&1; then
+      log "${label} healthy."
+      return 0
     fi
-  fi
-done
+    if [[ $(date +%s) -gt $deadline ]]; then
+      log "WARNING: ${label} did not become ready within ${WAIT_TIMEOUT}s"
+      return 1
+    fi
+    log "  ${label} not ready yet, retrying in 5s..."
+    sleep 5
+  done
+}
 
-if [[ -z "$COMPOSE_FILE" ]]; then
-  log "No L3 compose file found — L3 may be managed by infra/opstack/ or Kubernetes."
-  log "Run 'npm run preflight:opstack' to validate before starting OP Stack nodes."
-else
-  log "Using compose file: $COMPOSE_FILE"
+[[ -f "$COMPOSE_FILE" ]] || die "Missing compose file: $COMPOSE_FILE"
 
-  log "Pulling GhostL3 images..."
-  docker compose -f "$COMPOSE_FILE" pull --quiet 2>/dev/null || \
-    log "WARNING: Image pull failed (may use cached images)"
+log "Using compose file: $COMPOSE_FILE"
 
-  log "Starting GhostL3 OP Stack services..."
-  docker compose -f "$COMPOSE_FILE" up -d || true
-fi
+log "Pulling GhostL3 service images..."
+docker compose -f "$COMPOSE_FILE" pull --quiet "${L3_SERVICES[@]}" 2>/dev/null || \
+  log "WARNING: Image pull failed (may use cached images)"
 
-# ── Health gate: L3 EVM RPC ───────────────────────────────────────────────────
+log "Starting GhostL3 custom services..."
+docker compose -f "$COMPOSE_FILE" --project-name "$PROJECT_NAME" up -d "${L3_SERVICES[@]}" || true
 
-log "Waiting for GhostL3 EVM RPC on port ${L3_RPC_PORT}..."
-DEADLINE=$(( $(date +%s) + WAIT_TIMEOUT ))
-HEALTHY=0
-while true; do
-  if [[ $(date +%s) -gt $DEADLINE ]]; then
-    log "WARNING: L3 RPC did not respond within ${WAIT_TIMEOUT}s"
-    log "  L3 may still be synchronizing with L2 — this is expected on first start."
-    break
-  fi
+wait_for_http "http://localhost:7270/status" "GhostL3 execution service"
+wait_for_http "http://localhost:7273/status" "GhostL3 settlement service"
 
-  RESPONSE=$(curl -sf \
-    --max-time 5 \
-    -X POST \
-    -H "Content-Type: application/json" \
-    --data '{"jsonrpc":"2.0","method":"ghost_blockNumber","params":[],"id":1}' \
-    "http://localhost:${L3_RPC_PORT}" 2>/dev/null || true)
-
-  if echo "$RESPONSE" | grep -q '"result"'; then
-    BLOCK=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(int(d['result'],16))" 2>/dev/null || echo "?")
-    log "L3 RPC healthy — block height: ${BLOCK}"
-    HEALTHY=1
-    break
-  fi
-
-  log "  L3 RPC not ready yet, retrying in 5s..."
-  sleep 5
-done
-
-if [[ "$HEALTHY" -eq 1 ]]; then
-  log "GhostL3 deployed and healthy."
-else
-  log "GhostL3 startup initiated — verify-system.sh will confirm once fully synced."
-fi
+log "GhostL3 custom services started."
+log "  Host RPC prerequisite : http://localhost:${L3_RPC_PORT}"
+log "  ghost-exec-l3         : http://localhost:7270/status"
+log "  ghost-settlement-l3   : http://localhost:7273/status"

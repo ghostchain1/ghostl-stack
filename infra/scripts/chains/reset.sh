@@ -1,27 +1,30 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
-# Reset OP Stack devnet data (L2 base and optional L3 overlays).
+# Reset Ghost-native devnet data.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)}"
-OP_DIR="$ROOT_DIR/infra/opstack"
+
+# shellcheck source=scripts/lib/docker.sh
+. "$ROOT_DIR/scripts/lib/docker.sh"
+hg_require_docker_compose
 
 usage() {
   cat <<EOF >&2
 Usage: bash infra/scripts/chains/reset.sh [--l3 <name>] [--keep-l2]
-  --l3 <name>   wipe data for the specified L3 overlay under infra/opstack/l3/<name>/data (can be repeated)
-  --keep-l2     skip resetting the base OP Stack L2 (opstack/reset.sh)
+  --l3 <name>   accepted for compatibility; resets the canonical GhostL3 state
+  --keep-l2     skip resetting GhostL2 and reset GhostL3 only
 EOF
 }
 
 keep_l2=0
-l3_names=()
+reset_l3_only=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --l3)
-      l3_names+=("$2")
+      reset_l3_only=1
       shift 2
       ;;
     --keep-l2)
@@ -40,23 +43,36 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [ $keep_l2 -eq 0 ]; then
-  echo "Resetting OP Stack L2 (op-geth/op-node)..."
-  bash "$ROOT_DIR/infra/scripts/opstack/reset.sh"
-else
-  echo "Skipping L2 reset (per --keep-l2)"
+remove_matching_volumes() {
+  local suffixes=("$@")
+  local existing
+  existing="$(hg_docker volume ls --format '{{.Name}}' 2>/dev/null || true)"
+  local suffix volume
+
+  for suffix in "${suffixes[@]}"; do
+    while IFS= read -r volume; do
+      [[ -n "$volume" ]] || continue
+      echo "Removing volume: $volume"
+      hg_docker volume rm -f "$volume" >/dev/null 2>&1 || true
+    done < <(printf '%s\n' "$existing" | rg "${suffix}$" || true)
+  done
+}
+
+if [[ "$keep_l2" == "0" && "$reset_l3_only" == "0" ]]; then
+  echo "Resetting GhostChain / GhostL2 / GhostL3 core state..."
+  bash "$ROOT_DIR/infra/scripts/reset.sh"
+  exit 0
 fi
 
-for name in "${l3_names[@]}"; do
-  l3_dir="$OP_DIR/l3/$name"
-  data_dir="$l3_dir/data"
-  if [ ! -d "$l3_dir" ]; then
-    echo "L3 not found: $l3_dir (skipping)" >&2
-    continue
-  fi
-  echo "Wiping L3 data for '$name' ($data_dir)..."
-  rm -rf "$data_dir"
-  mkdir -p "$data_dir" "$data_dir/op-node" "$data_dir/l3-geth"
-done
+echo "Resetting GhostL3-only state while keeping GhostL2 intact..."
+hg_docker compose -f "$ROOT_DIR/docker-compose.custom-rollup.yml" stop \
+  ghost-exec-l3 ghost-sequencer-l3 ghost-deriver-l3 ghost-settlement-l3 ghost-bridge-l3 ghost-proof-l3 >/dev/null 2>&1 || true
+
+remove_matching_volumes \
+  "ghost-exec-l3-state" \
+  "ghost-deriver-l3-state" \
+  "ghost-settlement-l3-state" \
+  "ghost-bridge-l3-state" \
+  "ghost-proof-l3-state"
 
 echo "Reset complete."

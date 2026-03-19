@@ -366,18 +366,17 @@ if [ "$SKIP_BUILD" != "1" ]; then
   need_cmd cast
 fi
 
-[ -f "$ROOT_DIR/infra/opstack/.env" ] || die "missing infra/opstack/.env"
-[ -f "$ROOT_DIR/infra/opstack/.env.l2" ] || die "missing infra/opstack/.env.l2"
-[ -f "$ROOT_DIR/infra/opstack/.env.l3" ] || die "missing infra/opstack/.env.l3"
 [ -f "$ROOT_DIR/infra/ghostchain/.env.l1" ] || die "missing infra/ghostchain/.env.l1"
+[ -f "$ROOT_DIR/environments/devnet/ghostl2.env.example" ] || die "missing environments/devnet/ghostl2.env.example"
+[ -f "$ROOT_DIR/environments/devnet/ghostl3.env.example" ] || die "missing environments/devnet/ghostl3.env.example"
 
 log "Mode: $MODE"
 log "Secrets source: $SECRETS_SOURCE"
 log "Summary directory: $SUMMARY_DIR"
 
 L1_ENV_FILE_ACTIVE="$ROOT_DIR/infra/ghostchain/.env.l1"
-L2_ENV_FILE_ACTIVE="$ROOT_DIR/infra/opstack/.env.l2"
-L3_ENV_FILE_ACTIVE="$ROOT_DIR/infra/opstack/.env.l3"
+L2_ENV_FILE_ACTIVE="$ROOT_DIR/environments/devnet/ghostl2.env"
+L3_ENV_FILE_ACTIVE="$ROOT_DIR/environments/devnet/ghostl3.env"
 STACK_ENV_FILE_ACTIVE="$ROOT_DIR/services/stack.env"
 
 run_step "node-version-check" npm run node:check
@@ -397,8 +396,8 @@ L2_ENV_FILE_ACTIVE="$SUMMARY_DIR/.env.l2.override"
 L3_ENV_FILE_ACTIVE="$SUMMARY_DIR/.env.l3.override"
 STACK_ENV_FILE_ACTIVE="$SUMMARY_DIR/stack.env.override"
 cp "$ROOT_DIR/infra/ghostchain/.env.l1" "$L1_ENV_FILE_ACTIVE"
-cp "$ROOT_DIR/infra/opstack/.env.l2" "$L2_ENV_FILE_ACTIVE"
-cp "$ROOT_DIR/infra/opstack/.env.l3" "$L3_ENV_FILE_ACTIVE"
+cp "$ROOT_DIR/environments/devnet/ghostl2.env" "$L2_ENV_FILE_ACTIVE"
+cp "$ROOT_DIR/environments/devnet/ghostl3.env" "$L3_ENV_FILE_ACTIVE"
 cp "$ROOT_DIR/services/stack.env" "$STACK_ENV_FILE_ACTIVE"
 
 upsert_env_value "$L1_ENV_FILE_ACTIVE" "L1_SECRETS_SOURCE" "$SECRETS_SOURCE"
@@ -544,18 +543,12 @@ if [ "$ROLLUP_FINALITY_REQUIRED" = "true" ]; then
   fi
 fi
 
-run_step "sync-opstack-env-from-l1-deployments" bash "$ROOT_DIR/infra/scripts/opstack/sync-env-from-l1-deployments.sh" "$ROOT_DIR/infra/opstack/.env"
-run_step "sync-opstack-env-from-l2-deployments" bash "$ROOT_DIR/infra/scripts/opstack/sync-env-from-l2-deployments.sh" "$ROOT_DIR/infra/opstack/.env.l3"
-
-if [ "$MODE" = "dev" ]; then
-  if [ "$SECRETS_SOURCE" = "vault" ]; then
-    log "Skipping deploy-l3-parent-contracts in dev mode for vault secrets source"
-  else
-    run_step "deploy-l3-parent-contracts" bash "$ROOT_DIR/infra/scripts/opstack/deploy-l3.sh"
-  fi
-fi
-
-run_step "opstack-preflight-3layer" bash "$ROOT_DIR/infra/scripts/opstack/preflight-3layer.sh" "$ROOT_DIR/infra/opstack/.env" "$ROOT_DIR/infra/opstack/.env.l3"
+run_step "ghost-preflight-3layer" env \
+  STRICT_SECRETS="$([ "$MODE" = "dev" ] && echo 0 || echo 1)" \
+  RPC_L1="${RPC_L1:-http://localhost:18545}" \
+  RPC_L2="${RPC_L2:-http://localhost:29547}" \
+  RPC_L3="${RPC_L3:-http://localhost:39545}" \
+  bash "$ROOT_DIR/scripts/testnet/00-preflight.sh"
 
 if [ "$START_STACK" = "1" ]; then
   run_step "stack-up-full" bash "$ROOT_DIR/infra/scripts/up-full.sh"

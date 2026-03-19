@@ -4,7 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${ROOT_DIR:-$(cd "$SCRIPT_DIR/../../.." && pwd)}"
 TMP_DIR="$ROOT_DIR/.tmp"
-OP_ENV="$ROOT_DIR/infra/opstack/.env"
+STACK_ENV_FILE="$ROOT_DIR/services/stack.env"
+L2_ENV_FILE="$ROOT_DIR/environments/devnet/ghostl2.env"
+L3_ENV_FILE="$ROOT_DIR/environments/devnet/ghostl3.env"
 
 # shellcheck source=scripts/lib/docker.sh
 . "${ROOT_DIR}/scripts/lib/docker.sh"
@@ -51,13 +53,14 @@ compose_service_exists() {
   hg_docker compose "${COMPOSE_ARGS[@]}" config --services 2>/dev/null | grep -qx "$svc"
 }
 
-if [ -f "$OP_ENV" ]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$OP_ENV"
-  [ -f "$ROOT_DIR/infra/opstack/.env.secrets" ] && source "$ROOT_DIR/infra/opstack/.env.secrets"
-  set +a
-fi
+for env_file in "$STACK_ENV_FILE" "$L2_ENV_FILE" "$L3_ENV_FILE"; do
+  if [ -f "$env_file" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$env_file"
+    set +a
+  fi
+done
 
 mkdir -p "$TMP_DIR"
 keys_path="$TMP_DIR/keys.json"
@@ -121,9 +124,9 @@ if [ "${#pause_services[@]}" -gt 0 ]; then
   hg_docker compose "${COMPOSE_ARGS[@]}" stop --no-deps "${pause_services[@]}" >/dev/null 2>&1 || true
 fi
 
-HOST_L1_RPC="${HOST_L1_RPC:-http://localhost:18545}"
-HOST_L2_RPC="${HOST_L2_RPC:-http://localhost:29547}"
-HOST_L3_RPC="${HOST_L3_RPC:-http://localhost:39545}"
+HOST_L1_RPC="${HOST_L1_RPC:-${RPC_L1:-http://localhost:18545}}"
+HOST_L2_RPC="${HOST_L2_RPC:-${RPC_L2:-http://localhost:29547}}"
+HOST_L3_RPC="${HOST_L3_RPC:-${RPC_L3:-http://localhost:39545}}"
 FUND_AMOUNT_GST="${FUND_AMOUNT_GST:-10}"
 
 rpc_ready() {
@@ -149,11 +152,11 @@ fund_list="$(
   cd "$ROOT_DIR/contracts"
   FUND_AMOUNT_GST="$FUND_AMOUNT_GST" FUND_ADDRESSES_JSON="$fund_list" RPC_L1="$HOST_L1_RPC" \
     npx hardhat run --network anvil scripts/fund_addresses.ts >/dev/null
-  FUND_AMOUNT_GST="$FUND_AMOUNT_GST" FUND_ADDRESSES_JSON="$fund_list" OP_L2_RPC="$HOST_L2_RPC" \
-    npx hardhat run --network ghostl2Op scripts/fund_addresses.ts >/dev/null
+  FUND_AMOUNT_GST="$FUND_AMOUNT_GST" FUND_ADDRESSES_JSON="$fund_list" RPC_L2="$HOST_L2_RPC" \
+    npx hardhat run --network ghostl2 scripts/fund_addresses.ts >/dev/null
   if rpc_ready "$HOST_L3_RPC"; then
-    FUND_AMOUNT_GST="$FUND_AMOUNT_GST" FUND_ADDRESSES_JSON="$fund_list" OP_L3_RPC="$HOST_L3_RPC" \
-      npx hardhat run --network ghostl3Op scripts/fund_addresses.ts >/dev/null
+    FUND_AMOUNT_GST="$FUND_AMOUNT_GST" FUND_ADDRESSES_JSON="$fund_list" RPC_L3="$HOST_L3_RPC" \
+      npx hardhat run --network ghostl3 scripts/fund_addresses.ts >/dev/null
   else
     echo "Skipping L3 funding (RPC not reachable at $HOST_L3_RPC)"
   fi

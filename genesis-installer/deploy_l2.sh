@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # GhostStack Genesis Installer — Deploy GhostL2
 #
-# Starts the GhostL2 OP Stack rollup node anchored to GhostChain L1.
-# Runs preflight validation before starting to catch misconfiguration early.
+# Starts the GhostL2 custom execution service bundle anchored to GhostChain L1.
+# Runs compose validation before starting to catch misconfiguration early.
 #
-# Compose file: infra/opstack/docker-compose.l2-node.yml
-# Services:     l2-geth, op-node
+# Compose file: docker-compose.custom-rollup.yml
+# Services:     ghost-exec-l2, ghost-sequencer-l2, ghost-deriver-l2,
+#               ghost-settlement-l2, ghost-bridge-l2, ghost-proof-l2
 # Chain ID:     901
 # RPC port:     29547
 #
@@ -16,8 +17,16 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COMPOSE_FILE="${ROOT}/infra/opstack/docker-compose.l2-node.yml"
+COMPOSE_FILE="${ROOT}/docker-compose.custom-rollup.yml"
 PROJECT_NAME="${COMPOSE_PROJECT_NAME:-ghostl-stack}"
+L2_SERVICES=(
+  ghost-exec-l2
+  ghost-sequencer-l2
+  ghost-deriver-l2
+  ghost-settlement-l2
+  ghost-bridge-l2
+  ghost-proof-l2
+)
 
 # shellcheck source=scripts/lib/docker.sh
 . "${ROOT}/scripts/lib/docker.sh"
@@ -29,39 +38,33 @@ WAIT_TIMEOUT_S="${GHOSTL2_WAIT_S:-180}"
 HEALTH_RETRY_INTERVAL_S=5
 
 # ---------------------------------------------------------------------------
-# OP Stack preflight (validates rollup.json and L1 connectivity)
+# Ghost-native preflight (validates compose shape)
 # ---------------------------------------------------------------------------
 
 run_preflight() {
-  if [[ -f "${ROOT}/package.json" ]] && \
-     grep -q '"preflight:opstack"' "${ROOT}/package.json" 2>/dev/null; then
-    info "Running OP Stack preflight…"
-    npm --prefix "${ROOT}" run preflight:opstack || fatal "OP Stack preflight failed."
-  else
-    info "preflight:opstack script not found — skipping (run manually if needed)."
-  fi
+  info "Resolving Ghost-native compose config…"
+  hg_docker compose -f "${COMPOSE_FILE}" -p "${PROJECT_NAME}" config >/dev/null \
+    || fatal "Ghost-native compose config validation failed."
 }
 
 # ---------------------------------------------------------------------------
-# Wait for L2 RPC
+# Wait for L2 services
 # ---------------------------------------------------------------------------
 
-wait_for_l2_rpc() {
-  info "Waiting for GhostL2 RPC on port 29547 (timeout ${WAIT_TIMEOUT_S}s)…"
+wait_for_http() {
+  local url="$1"
+  local label="$2"
+  info "Waiting for ${label} (timeout ${WAIT_TIMEOUT_S}s)…"
   local elapsed=0
-  until curl -sf \
-      -X POST \
-      -H "Content-Type: application/json" \
-      --data '{"jsonrpc":"2.0","method":"ghost_blockNumber","params":[],"id":1}' \
-      http://localhost:29547 >/dev/null 2>&1
+  until curl -sf "$url" >/dev/null 2>&1
   do
     if [[ "${elapsed}" -ge "${WAIT_TIMEOUT_S}" ]]; then
-      fatal "GhostL2 RPC did not become ready within ${WAIT_TIMEOUT_S}s."
+      fatal "${label} did not become ready within ${WAIT_TIMEOUT_S}s."
     fi
     sleep "${HEALTH_RETRY_INTERVAL_S}"
     elapsed=$(( elapsed + HEALTH_RETRY_INTERVAL_S ))
   done
-  info "GhostL2 RPC ready (${elapsed}s)."
+  info "${label} ready (${elapsed}s)."
 }
 
 # ---------------------------------------------------------------------------
@@ -94,18 +97,20 @@ run_preflight
 
 cd "${ROOT}"
 
-info "Pulling L2 images…"
-hg_docker compose -f "${COMPOSE_FILE}" -p "${PROJECT_NAME}" pull --quiet 2>&1 | tail -5 || true
+info "Pulling L2 service images…"
+hg_docker compose -f "${COMPOSE_FILE}" -p "${PROJECT_NAME}" pull --quiet "${L2_SERVICES[@]}" 2>&1 | tail -5 || true
 
-info "Starting l2-geth…"
-hg_docker compose -f "${COMPOSE_FILE}" -p "${PROJECT_NAME}" up -d l2-geth
+for svc in "${L2_SERVICES[@]}"; do
+  info "Starting ${svc}…"
+  hg_docker compose -f "${COMPOSE_FILE}" -p "${PROJECT_NAME}" up -d "${svc}"
+done
 
-info "Starting op-node…"
-hg_docker compose -f "${COMPOSE_FILE}" -p "${PROJECT_NAME}" up -d op-node
-
-wait_for_l2_rpc
+wait_for_http "http://localhost:7260/status" "GhostL2 execution service"
+wait_for_http "http://localhost:7263/status" "GhostL2 settlement service"
 
 info "GhostL2 deployed."
-info "  RPC      : http://localhost:29547"
+info "  Host RPC prerequisite : http://localhost:29547"
+info "  ghost-exec-l2         : http://localhost:7260/status"
+info "  ghost-settlement-l2   : http://localhost:7263/status"
 info "  Chain ID : 901"
 info "  Settles to L1 chain_id=14000101"

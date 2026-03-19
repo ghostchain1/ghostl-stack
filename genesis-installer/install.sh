@@ -4,8 +4,8 @@
 # Runs all phases in sequence:
 #   configure  → system prereqs + env file
 #   deploy_l1  → GhostChain L1 (ghostchaind, CometBFT)
-#   deploy_l2  → GhostL2 OP Stack (l2-geth, op-node)
-#   deploy_l3  → GhostL3 OP Stack (l3-geth, l3-op-node)
+#   deploy_l2  → GhostL2 custom services
+#   deploy_l3  → GhostL3 custom services
 #   deploy_ghostbrain → AI layer (ghostbrain-core + agents)
 #   monitoring → Prometheus, Grafana, Loki
 #   start_stack → remaining services (compliance, API, web)

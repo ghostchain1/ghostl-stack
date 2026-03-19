@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-OUT_DIR="${L3_SECRETS_DIR:-$ROOT_DIR/infra/opstack/l3/secrets}"
+OUT_DIR="${L3_SECRETS_DIR:-$ROOT_DIR/environments/devnet/secrets/ghostl3}"
 VAULT_L3_PATH="${VAULT_L3_PATH:-ghostchain/l3}"
 
 if ! command -v vault >/dev/null 2>&1; then

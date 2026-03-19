@@ -27,17 +27,9 @@ if [ -f "$STACK_ENV" ]; then
 fi
 set +a
 
-OPSTACK_SECRETS="$ROOT_DIR/infra/opstack/.env.secrets"
-if [ -f "$OPSTACK_SECRETS" ]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$OPSTACK_SECRETS"
-  set +a
-fi
-
 FINALIZER_KEY="${L2_RELAYER_PRIVATE_KEY:-${DEPLOYER_PRIVATE_KEY:-}}"
 if [ -z "${FINALIZER_KEY:-}" ]; then
-  echo "Missing L2_RELAYER_PRIVATE_KEY or DEPLOYER_PRIVATE_KEY (expected from services/stack.env or infra/opstack/.env.secrets)" >&2
+  echo "Missing L2_RELAYER_PRIVATE_KEY or DEPLOYER_PRIVATE_KEY (expected from services/stack.env or env)" >&2
   exit 1
 fi
 
@@ -61,4 +53,4 @@ DEMO_FROM="$DEMO_FROM" \
 DEMO_TO="$DEMO_TO" \
 DEMO_AMOUNT_WEI="$DEMO_AMOUNT_WEI" \
 DEMO_NONCE="$DEMO_NONCE" \
-npx hardhat run --network ghostl2Op scripts/demo_finalize_erc20.ts
+npx hardhat run --network ghostl2 scripts/demo_finalize_erc20.ts

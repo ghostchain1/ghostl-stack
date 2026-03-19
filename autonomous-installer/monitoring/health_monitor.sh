@@ -134,10 +134,18 @@ check_apis() {
 
 CRITICAL_CONTAINERS=(
   ghostchaind
-  l2-geth
-  op-node
-  l3-geth
-  l3-op-node
+  ghost-exec-l2
+  ghost-sequencer-l2
+  ghost-deriver-l2
+  ghost-settlement-l2
+  ghost-bridge-l2
+  ghost-proof-l2
+  ghost-exec-l3
+  ghost-sequencer-l3
+  ghost-deriver-l3
+  ghost-settlement-l3
+  ghost-bridge-l3
+  ghost-proof-l3
   ghostbrain-core
   ghostbrain-postgres
   ghostbrain-redis
@@ -152,6 +160,7 @@ NON_CRITICAL_CONTAINERS=(
   ghost-compliance
   ghost-gas-engine
   ghost-guard
+  ghost-observability
   governance-event-bridge
 )
 

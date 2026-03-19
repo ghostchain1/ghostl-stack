@@ -16,16 +16,8 @@ set -a
 source "$ENV_FILE"
 set +a
 
-OPSTACK_SECRETS="$ROOT_DIR/infra/opstack/.env.secrets"
-if [ -f "$OPSTACK_SECRETS" ]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$OPSTACK_SECRETS"
-  set +a
-fi
-
 if [ -z "${DEPLOYER_PRIVATE_KEY:-}" ]; then
-  echo "Missing DEPLOYER_PRIVATE_KEY (expected in infra/opstack/.env.secrets or env)" >&2
+  echo "Missing DEPLOYER_PRIVATE_KEY (expected in services/ghost-guard/.env or env)" >&2
   exit 1
 fi
 
@@ -89,7 +81,7 @@ if [ "$BALANCE_WEI" -lt "$DEMO_AMOUNT_WEI" ]; then
     cd "$ROOT_DIR/contracts" && \
     TOKEN_NAME="Ghost Demo Token" TOKEN_SYMBOL="GDM" TOKEN_DECIMALS="18" \
     MINT_TO="$DEPOSITOR" MINT_AMOUNT="$MINT_AMOUNT_WEI" \
-    npx hardhat run --network ghostl2Op scripts/deploy-test-erc20.ts
+    npx hardhat run --network ghostl2 scripts/deploy-test-erc20.ts
   )"
   TOKEN_ADDRESS="$(printf '%s\n' "$DEPLOY_OUT" | awk '/TestERC20 deployed at:/ {print $4; exit}')"
   if [ -z "$TOKEN_ADDRESS" ]; then
@@ -105,4 +97,4 @@ echo "Depositor=$DEPOSITOR"
 echo "Sending demo ERC20 deposit (amount=${DEMO_AMOUNT_GST} tokens)..."
 
 cd "$ROOT_DIR/contracts"
-DEMO_AMOUNT_GST="$DEMO_AMOUNT_GST" L2_TOKEN_ADDRESS="$TOKEN_ADDRESS" npx hardhat run --network ghostl2Op scripts/demo_deposit_erc20.ts
+DEMO_AMOUNT_GST="$DEMO_AMOUNT_GST" L2_TOKEN_ADDRESS="$TOKEN_ADDRESS" npx hardhat run --network ghostl2 scripts/demo_deposit_erc20.ts

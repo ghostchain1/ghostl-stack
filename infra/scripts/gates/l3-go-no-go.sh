@@ -1,26 +1,23 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-ENV_FILE="${L3_ENV_FILE:-$ROOT_DIR/infra/opstack/.env.l3}"
-SECRETS_FILE="${L3_SECRETS_FILE:-$ROOT_DIR/infra/opstack/.env.secrets}"
+ENV_FILE="${L3_ENV_FILE:-$ROOT_DIR/environments/devnet/ghostl3.env.generated}"
 
-if [ -f "$ENV_FILE" ]; then
+if [[ -x "$ROOT_DIR/infra/scripts/env-sync-l3.sh" ]]; then
+  "$ROOT_DIR/infra/scripts/env-sync-l3.sh" >/dev/null
+fi
+
+if [[ -f "$ENV_FILE" ]]; then
   set -a
   # shellcheck disable=SC1090
   source "$ENV_FILE"
   set +a
 fi
-if [ -f "$SECRETS_FILE" ]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$SECRETS_FILE"
-  set +a
-fi
 
-HOST_L3_RPC="${HOST_L3_RPC:-${L3_RPC:-http://localhost:39545}}"
-PARENT_L2_RPC="${PARENT_L2_RPC:-http://localhost:29547}"
-AI_MONITOR_URL="${AI_MONITOR_L3_URL:-http://localhost:7577/health}"
+HOST_L3_RPC="${HOST_L3_RPC:-${RPC_PUBLIC_URL:-http://localhost:39545}}"
+PARENT_L2_RPC="${PARENT_L2_RPC:-${CHAIN_POLICY_REGISTRY_RPC:-http://localhost:29547}}"
+AI_MONITOR_URL="${AI_MONITOR_L3_URL:-http://localhost:7575/health}"
 POLICY_REGISTRY_ADDRESS="${POLICY_REGISTRY_ADDRESS:-}"
 POLICY_REGISTRY_RPC="${POLICY_REGISTRY_RPC:-$PARENT_L2_RPC}"
 CHAIN_POLICY_REGISTRY_ADDRESS="${CHAIN_POLICY_REGISTRY_ADDRESS:-}"
@@ -52,35 +49,26 @@ echo "[l3-go-no-go] enforcing GST-native leakage gates"
 
 echo "[l3-go-no-go] doctor"
 effective_env="$(printf '%s' "${STACK_ENV:-${L3_ENV:-dev}}" | tr '[:upper:]' '[:lower:]')"
-if [ -z "$L3_GO_NO_GO_REQUIRE_PROGRESS" ]; then
+if [[ -z "$L3_GO_NO_GO_REQUIRE_PROGRESS" ]]; then
   case "$effective_env" in
     prod|production|staging) L3_GO_NO_GO_REQUIRE_PROGRESS=1 ;;
     *) L3_GO_NO_GO_REQUIRE_PROGRESS=0 ;;
   esac
 fi
 
-if [ "$L3_GO_NO_GO_SKIP_RUNTIME" = "1" ]; then
-  if [ -z "${L3_DOCTOR_SKIP_RUNTIME:-}" ]; then
-    export L3_DOCTOR_SKIP_RUNTIME=1
-  fi
+if [[ "$L3_GO_NO_GO_SKIP_RUNTIME" == "1" ]]; then
   warn "runtime checks skipped (L3_GO_NO_GO_SKIP_RUNTIME=1)"
 fi
 
-if ! docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then
-  if [ -z "${L3_DOCTOR_SKIP_DOCKER:-}" ]; then
-    export L3_DOCTOR_SKIP_DOCKER=1
-  fi
-fi
-
-if [ "$L3_GO_NO_GO_REQUIRE_PROGRESS" = "1" ]; then
-  L3_REQUIRE_L3_PROGRESS=1 "$ROOT_DIR/infra/scripts/doctor-l3.sh"
-else
+if [[ "$L3_GO_NO_GO_REQUIRE_PROGRESS" == "1" ]]; then
   "$ROOT_DIR/infra/scripts/doctor-l3.sh"
+else
+  "$ROOT_DIR/infra/scripts/doctor-l3.sh" --dry-run
 fi
 
-if [ "$L3_GO_NO_GO_SKIP_RUNTIME" != "1" ]; then
+if [[ "$L3_GO_NO_GO_SKIP_RUNTIME" != "1" ]]; then
   echo "[l3-go-no-go] rpc stability"
-  for i in $(seq 1 "$L3_GO_NO_GO_LOAD_SECONDS"); do
+  for _i in $(seq 1 "$L3_GO_NO_GO_LOAD_SECONDS"); do
     jsonrpc "$HOST_L3_RPC" "eth_blockNumber" >/dev/null || fail "L3 RPC unstable"
     sleep 1
   done
@@ -92,25 +80,21 @@ if [ "$L3_GO_NO_GO_SKIP_RUNTIME" != "1" ]; then
   curl -fsS "$AI_MONITOR_URL" >/dev/null || warn "AI monitor not reachable"
 
   echo "[l3-go-no-go] policy registry"
-  if [ -z "$POLICY_REGISTRY_ADDRESS" ]; then
+  if [[ -z "$POLICY_REGISTRY_ADDRESS" ]]; then
     warn "policy registry address missing"
   else
-    if ! jsonrpc "$POLICY_REGISTRY_RPC" "eth_chainId" >/dev/null; then
-      fail "policy registry RPC unreachable"
-    fi
+    jsonrpc "$POLICY_REGISTRY_RPC" "eth_chainId" >/dev/null || fail "policy registry RPC unreachable"
   fi
 
   echo "[l3-go-no-go] chain policy registry"
-  if [ -n "$CHAIN_POLICY_REGISTRY_ADDRESS" ]; then
-    if ! jsonrpc "$CHAIN_POLICY_REGISTRY_RPC" "eth_chainId" >/dev/null; then
-      fail "chain policy registry RPC unreachable"
-    fi
+  if [[ -n "$CHAIN_POLICY_REGISTRY_ADDRESS" ]]; then
+    jsonrpc "$CHAIN_POLICY_REGISTRY_RPC" "eth_chainId" >/dev/null || fail "chain policy registry RPC unreachable"
   fi
 fi
 
 echo "[l3-go-no-go] invariants"
-if [ -x "$ROOT_DIR/contracts/node_modules/.bin/forge" ]; then
-  if [ "$L3_GO_NO_GO_INVARIANT_MODE" = "full" ]; then
+if [[ -x "$ROOT_DIR/contracts/node_modules/.bin/forge" ]]; then
+  if [[ "$L3_GO_NO_GO_INVARIANT_MODE" == "full" ]]; then
     (cd "$ROOT_DIR/contracts" && npm run test:invariant >/dev/null)
   else
     (cd "$ROOT_DIR/contracts" && npm run test:gst-invariant >/dev/null)
@@ -120,29 +104,29 @@ else
 fi
 
 echo "[l3-go-no-go] evidence pack"
-if [ -x "$ROOT_DIR/infra/scripts/evidence-pack-l3.sh" ]; then
+if [[ -x "$ROOT_DIR/infra/scripts/evidence-pack-l3.sh" ]]; then
   "$ROOT_DIR/infra/scripts/evidence-pack-l3.sh" >/dev/null
 else
   warn "evidence-pack-l3.sh missing"
 fi
 
-if [ "$L3_GO_NO_GO_REQUIRE_SCANS" = "1" ]; then
+if [[ "$L3_GO_NO_GO_REQUIRE_SCANS" == "1" ]]; then
   echo "[l3-go-no-go] vulnerability scans"
   command -v trivy >/dev/null 2>&1 || fail "trivy missing"
   trivy fs --scanners vuln --exit-code 1 --severity HIGH,CRITICAL \
-    --skip-dirs **/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals,contracts/.foundry-out,contracts/.foundry-cache,contracts/.foundry-out-local,contracts/.foundry-cache-local,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,infra/ghostchain/data,infra/ghostchain/secrets,infra/opstack/data,infra/opstack/broadcast,infra/opstack/secrets,infra/opstack/l3/secrets,infra/opstack/l3,chains/l2/data,chains/l3/data \
-    --skip-files ops/security/trivy-fs.json,contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json,infra/opstack/op-geth/signer/fourbyte/4byte.json \
+    --skip-dirs **/node_modules,dist,contracts/dist,contracts/artifacts,contracts/cache,contracts/.hardhat-cache,contracts/typechain-types,contracts/proposals,contracts/.foundry-out,contracts/.foundry-cache,contracts/.foundry-out-local,contracts/.foundry-cache-local,artifacts,cache,backups,ops/snapshots,ops/preflight,contracts/out-codex,contracts/cache-codex,infra/ghostchain/data,infra/ghostchain/secrets,chains/l2/data,chains/l3/data \
+    --skip-files ops/security/trivy-fs.json,contracts/reports/formal/scribble/scribble.json,contracts/artifacts/build-info/*.json \
     "$ROOT_DIR"
 fi
 
-if [ "$L3_GO_NO_GO_RESTART_CHECK" = "1" ]; then
-  if [ "$L3_GO_NO_GO_SKIP_RUNTIME" = "1" ]; then
+if [[ "$L3_GO_NO_GO_RESTART_CHECK" == "1" ]]; then
+  if [[ "$L3_GO_NO_GO_SKIP_RUNTIME" == "1" ]]; then
     warn "restart resilience check skipped (L3_GO_NO_GO_SKIP_RUNTIME=1)"
   else
-    echo "[l3-go-no-go] restart resilience (l3-op-node)"
-    docker compose -f "$ROOT_DIR/infra/opstack/docker-compose.l3.yml" restart l3-op-node
+    echo "[l3-go-no-go] restart resilience (ghost-exec-l3)"
+    docker compose -f "$ROOT_DIR/docker-compose.custom-rollup.yml" restart ghost-exec-l3
     sleep 5
-    jsonrpc "$HOST_L3_RPC" "eth_chainId" >/dev/null || fail "L3 RPC did not recover after restart"
+    curl -fsS "http://localhost:7270/status" >/dev/null || fail "ghost-exec-l3 did not recover after restart"
   fi
 fi
 

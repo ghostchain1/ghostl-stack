@@ -54,16 +54,7 @@ const GHOST_PROTECTED_PATTERNS: readonly RegExp[] = [
   /^(?:ghost[_-])?(?:ghost-exec|ghost-sequencer|ghost-deriver|ghost-settlement|ghost-bridge|ghost-proof|ghost-observability|ghost-rollup-proxy|ghost-rpc-proxy|ghostl2|ghostl3)(?:[-_].*)?$/i,
 ];
 
-// Legacy OP Stack protection remains only as a safety fallback while compat
-// environments still exist on some operators' hosts.
-const LEGACY_COMPAT_PROTECTED_PATTERNS: readonly RegExp[] = [
-  /^(?:op-geth|op-node|l3-op-node|op-batcher|op-proposer|op-challenger)(?:[-_].*)?$/i,
-];
-
-const PROTECTED_PATTERNS: readonly RegExp[] = [
-  ...GHOST_PROTECTED_PATTERNS,
-  ...LEGACY_COMPAT_PROTECTED_PATTERNS,
-];
+const PROTECTED_PATTERNS: readonly RegExp[] = [...GHOST_PROTECTED_PATTERNS];
 
 // Optional allowlist: comma-separated container / VM names.
 // When KERNEL_TARGET_ALLOWLIST is non-empty, any target NOT in the list
