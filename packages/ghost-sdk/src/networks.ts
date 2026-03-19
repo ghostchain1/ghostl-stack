@@ -1,3 +1,5 @@
+import { getChain } from "@ghostchain/ghost-chain-registry";
+
 /**
  * GhostChain network definitions.
  *
@@ -24,22 +26,7 @@ export interface GhostNetworkConfig {
   explorer?: string;
 }
 
-/** Local / devnet RPC endpoints */
-const LOCAL_RPCS = {
-  L1: "http://localhost:18545",
-  L2: "http://localhost:29547",
-  L3: "http://localhost:39545",
-};
-
-/** Production / public RPC endpoints (override with env vars at runtime) */
-const _PUBLIC_RPCS = {
-  L1: "https://rpc.ghostchain.cloud",
-  L2: "https://l2.rpc.ghostchain.cloud",
-  L3: "https://l3.rpc.ghostchain.cloud",
-};
-
 function rpcFor(layer: GhostLayer): string {
-  // Allow callers to override via environment variables at runtime.
   if (typeof process !== "undefined") {
     const envKey = `GHOST_${layer}_RPC`;
     const envVal = process.env[envKey];
@@ -49,33 +36,37 @@ function rpcFor(layer: GhostLayer): string {
     const legacyVal = process.env[legacyKey];
     if (legacyVal) return legacyVal;
   }
-  return LOCAL_RPCS[layer];
+  return layer === "L1"
+    ? getChain("ghostchain").rpc.localHttp
+    : layer === "L2"
+      ? getChain("ghostl2").rpc.localHttp
+      : getChain("ghostl3").rpc.localHttp;
 }
 
 export const GhostNetworks: Record<GhostLayer, GhostNetworkConfig> = {
   L1: {
-    name: "ghostchain",
-    chainId: 14000101,
+    name: getChain("ghostchain").displayName,
+    chainId: getChain("ghostchain").chainId,
     symbol: "GST",
     rpc: rpcFor("L1"),
     layer: "L1",
-    explorer: "https://explorer.ghostchain.cloud",
+    explorer: getChain("ghostchain").explorerUrl,
   },
   L2: {
-    name: "ghostl2",
-    chainId: 901,
+    name: getChain("ghostl2").displayName,
+    chainId: getChain("ghostl2").chainId,
     symbol: "GST",
     rpc: rpcFor("L2"),
     layer: "L2",
-    explorer: "https://l2.explorer.ghostchain.cloud",
+    explorer: getChain("ghostl2").explorerUrl,
   },
   L3: {
-    name: "ghostl3",
-    chainId: 903,
+    name: getChain("ghostl3").displayName,
+    chainId: getChain("ghostl3").chainId,
     symbol: "GST",
     rpc: rpcFor("L3"),
     layer: "L3",
-    explorer: "https://l3.explorer.ghostchain.cloud",
+    explorer: getChain("ghostl3").explorerUrl,
   },
 };
 

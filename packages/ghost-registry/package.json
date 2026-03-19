@@ -7,6 +7,9 @@
   "scripts": {
     "build": "tsc"
   },
+  "dependencies": {
+    "@ghostchain/ghost-chain-registry": "1.0.0"
+  },
   "devDependencies": {
     "@types/node": "^20.19.37",
     "typescript": "^5.5.2"

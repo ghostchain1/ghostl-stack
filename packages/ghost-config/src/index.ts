@@ -1,3 +1,9 @@
+import { getChain } from "@ghostchain/ghost-chain-registry";
+
+const GHOSTCHAIN_L1 = getChain("ghostchain");
+const GHOSTL2 = getChain("ghostl2");
+const GHOSTL3 = getChain("ghostl3");
+
 export const GHOST_SITES = Object.freeze({
   main: Object.freeze({
     key: "main",
@@ -224,26 +230,31 @@ export const GHOST_PUBLIC_FOOTER_COLUMNS = Object.freeze([
 export const GHOST_RPC_ENDPOINTS = Object.freeze({
   l1: Object.freeze({
     layer: "L1",
-    chainId: 14000101,
-    publicUrl: "https://rpc.ghostchain.cloud",
-    localUrl: "http://localhost:18545",
-    port: 18545,
+    chainId: GHOSTCHAIN_L1.chainId,
+    publicUrl: GHOSTCHAIN_L1.rpc.publicHttp,
+    localUrl: GHOSTCHAIN_L1.rpc.localHttp,
+    internalUrl: GHOSTCHAIN_L1.rpc.internalHttp,
+    port: GHOSTCHAIN_L1.ports.hostRpc,
     explorerUrl: GHOST_SITES.explorer.url,
   }),
   l2: Object.freeze({
     layer: "L2",
-    chainId: 901,
-    publicUrl: "https://l2rpc.ghostchain.cloud",
-    localUrl: "http://localhost:29547",
-    port: 29547,
+    chainId: GHOSTL2.chainId,
+    publicUrl: GHOSTL2.rpc.publicHttp,
+    localUrl: GHOSTL2.rpc.localHttp,
+    internalUrl: GHOSTL2.rpc.internalHttp,
+    port: GHOSTL2.ports.hostRpc,
+    controlPort: GHOSTL2.ports.controlRpc,
     explorerUrl: `${GHOST_SITES.explorer.url}?layer=2`,
   }),
   l3: Object.freeze({
     layer: "L3",
-    chainId: 903,
-    publicUrl: "https://l3rpc.ghostchain.cloud",
-    localUrl: "http://localhost:39545",
-    port: 39545,
+    chainId: GHOSTL3.chainId,
+    publicUrl: GHOSTL3.rpc.publicHttp,
+    localUrl: GHOSTL3.rpc.localHttp,
+    internalUrl: GHOSTL3.rpc.internalHttp,
+    port: GHOSTL3.ports.hostRpc,
+    controlPort: GHOSTL3.ports.controlRpc,
     explorerUrl: `${GHOST_SITES.explorer.url}?layer=3`,
   }),
 });

@@ -1,5 +1,5 @@
 {
-  "name": "@ghostchain/config",
+  "name": "@ghostchain/ghost-chain-registry",
   "version": "1.0.0",
   "private": true,
   "main": "src/index.ts",
@@ -7,10 +7,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*.ts"
-  },
-  "dependencies": {
-    "@ghostchain/ghost-chain-registry": "1.0.0",
-    "@ghostl/config": "0.0.1"
   },
   "engines": {
     "node": ">=22.21.0 <23"

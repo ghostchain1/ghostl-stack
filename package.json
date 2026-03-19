@@ -18,6 +18,7 @@
     "packages/ghost-ai-sdk",
     "packages/ghost-autonomous",
     "packages/ghost-brand",
+    "packages/ghost-chain-registry",
     "packages/ghost-cognitive",
     "packages/ghost-consciousness",
     "packages/ghost-contract-factory",

@@ -178,6 +178,7 @@
     "lint": "echo 'TODO: add lint'"
   },
   "dependencies": {
+    "@ghostchain/ghost-chain-registry": "1.0.0",
     "@noble/curves": "^1.0.0",
     "@noble/hashes": "^1.4.0",
     "ethers": "^6.13.0"
