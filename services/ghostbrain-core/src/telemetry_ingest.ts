@@ -15,6 +15,7 @@
  * Performance target: < 50 ms per batch ingestion cycle.
  */
 
+import http from "node:http";
 import { request }              from "undici";
 import { store_event, record_infra_snapshot } from "./memory_engine.js";
 import { log }                  from "./observability/event_logger.js";
@@ -45,15 +46,50 @@ async function httpGet(url: string, timeoutMs = 4000): Promise<string | null> {
 }
 
 async function dockerGet<T>(path: string): Promise<T | null> {
+  const socketPath = DOCKER_HTTP ? undefined : DOCKER_SOCKET.replace(/^unix:\/\//, "");
+  if (socketPath) {
+    try {
+      const body = await new Promise<string>((resolve, reject) => {
+        const req = http.request(
+          {
+            socketPath,
+            path,
+            method: "GET",
+            headers: { Host: "docker" },
+            timeout: 5_000,
+          },
+          (res) => {
+            if ((res.statusCode ?? 500) !== 200) {
+              reject(new Error(`docker_http_status_${res.statusCode ?? 500}`));
+              res.resume();
+              return;
+            }
+
+            let chunks = "";
+            res.setEncoding("utf8");
+            res.on("data", (chunk) => { chunks += chunk; });
+            res.on("end", () => resolve(chunks));
+          },
+        );
+
+        req.on("timeout", () => req.destroy(new Error("docker_socket_timeout")));
+        req.on("error", reject);
+        req.end();
+      });
+
+      return JSON.parse(body) as T;
+    } catch {
+      return null;
+    }
+  }
+
   try {
-    const socketPath = DOCKER_HTTP ? undefined : DOCKER_SOCKET.replace(/^unix:\/\//, "");
     const origin     = DOCKER_HTTP || "http://localhost";
     const opts = {
       path,
       method: "GET" as const,
       headers: { Host: "docker" },
       bodyTimeout: 5_000,
-      ...(socketPath ? { socketPath } : {}),
     };
     const res = await request(origin, opts);
     if (res.statusCode !== 200) return null;

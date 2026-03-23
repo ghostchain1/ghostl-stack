@@ -161,6 +161,8 @@ for bin in "${required_bins[@]}"; do
   else
     if [[ "$bin" == "docker" && "$STRICT_MODE" != "1" ]]; then
       record_check "binary:$bin" "skip" "missing (non-strict)"
+    elif [[ "$bin" == "rg" && "$STRICT_MODE" != "1" ]]; then
+      record_check "binary:$bin" "skip" "missing — using find fallback (install ripgrep for faster compose discovery)"
     else
       record_check "binary:$bin" "fail" "missing"
       HAS_FAILURE=1
@@ -198,6 +200,8 @@ if command -v rg >/dev/null 2>&1; then
     -g '!**/infra/docker/compose/**' \
     -g '!**/services/**/rollback/**' \
     -g '!**/interop-devnet/**' \
+    -g '!**/ghostl-stack-v2/legacy/**' \
+    -g '!**/ghostl-stack-v2-standalone/**' \
     "$ROOT_DIR" | sort > "$OUT_DIR/compose-files.txt"
 else
   find "$ROOT_DIR" -name 'docker-compose*.yml' \
@@ -206,7 +210,9 @@ else
     -not -path '*/infra/docker/_backup/*' \
     -not -path '*/infra/docker/compose/*' \
     -not -path '*/services/*/rollback/*' \
-    -not -path '*/interop-devnet/*' | sort > "$OUT_DIR/compose-files.txt"
+    -not -path '*/interop-devnet/*' \
+    -not -path '*/ghostl-stack-v2/legacy/*' \
+    -not -path '*/ghostl-stack-v2-standalone/*' | sort > "$OUT_DIR/compose-files.txt"
 fi
 
 # Disk and RAM checks (thresholds are configurable)
@@ -278,12 +284,20 @@ def add_cross(port, file):
 
 
 def host_port_from_str(s: str):
-    s = s.split("/")[0]
+    # Preserve protocol suffix (e.g. /udp vs /tcp — different protos are not conflicts)
+    proto = ""
+    if "/" in s:
+        s, proto = s.rsplit("/", 1)
+        proto = "/" + proto
     if ":" not in s:
         return None
     parts = s.split(":")
-    if len(parts) >= 2:
-        return parts[-2]
+    if len(parts) == 2:
+        # host_port:container_port
+        return f"{parts[0]}{proto}" if parts[0] else None
+    if len(parts) == 3:
+        # host_ip:host_port:container_port
+        return f"{parts[0]}:{parts[1]}{proto}" if parts[1] else None
     return None
 
 for rel in files:
@@ -321,15 +335,26 @@ for rel in files:
         elif isinstance(env_files, list):
             env_list = [e for e in env_files if isinstance(e, str)]
         for envf in env_list:
+            # Skip paths with shell parameter expansions (can't resolve statically)
+            if '${' in envf:
+                continue
             env_path = envf
             if not os.path.isabs(envf):
                 env_path = os.path.normpath(os.path.join(os.path.dirname(rel), envf))
             if not os.path.exists(env_path):
+                # Per-service compose files (services/<name>/docker-compose.yml)
+                # missing their .env are advisory — each service manages its own env.
+                # Only stack-level compose files (root, infra/, apps/) are blocking.
+                is_per_service = (
+                    os.sep + 'services' + os.sep in rel
+                    and rel.count(os.sep + 'services' + os.sep) == 1
+                )
                 missing_envs.append({
                     "compose": rel,
                     "service": svc,
                     "env_file": envf,
                     "resolved_path": env_path,
+                    "advisory": is_per_service,
                 })
     for port, svcs in port_map.items():
         if len(svcs) > 1:
@@ -343,10 +368,12 @@ with open(ports_json, "w", encoding="utf-8") as f:
         "cross_file_conflicts": cross_conflicts,
     }, f, indent=2, sort_keys=True)
 
+# Only blocking failures are non-advisory (stack-level) missing env files.
+blocking_missing = [e for e in missing_envs if not e.get("advisory")]
 with open(envs_json, "w", encoding="utf-8") as f:
-    json.dump({"missing_env_files": missing_envs}, f, indent=2, sort_keys=True)
+    json.dump({"missing_env_files": missing_envs, "blocking_count": len(blocking_missing)}, f, indent=2, sort_keys=True)
 
-if intra_conflicts or missing_envs:
+if intra_conflicts or blocking_missing:
     sys.exit(2)
 PY
   then
@@ -501,6 +528,97 @@ if [[ "$EMIT_L1_EVIDENCE" == "true" ]]; then
     record_check "l1:evidence" "fail" "missing script"
     HAS_FAILURE=1
   fi
+fi
+
+# ── Release signing material check ───────────────────────────────────────────
+key_file="${RELEASE_ATTESTATION_PRIVATE_KEY_FILE:-}"
+if [[ -z "$key_file" ]]; then
+  # Try loading from services/stack.env
+  if [[ -f "$ROOT_DIR/services/stack.env" ]]; then
+    key_file="$(grep -E '^RELEASE_ATTESTATION_PRIVATE_KEY_FILE=' "$ROOT_DIR/services/stack.env" \
+      | head -1 | cut -d= -f2- | tr -d '[:space:]')"
+  fi
+fi
+if [[ -z "$key_file" ]]; then
+  record_check "release:signing_material" "fail" "RELEASE_ATTESTATION_PRIVATE_KEY_FILE not set — no signing material configured"
+  HAS_FAILURE=1
+else
+  # Resolve relative path from ROOT_DIR
+  [[ "$key_file" = /* ]] || key_file="$ROOT_DIR/$key_file"
+  if [[ -f "$key_file" ]]; then
+    pub_file="${key_file%.key}.pub"
+    if [[ -f "$pub_file" ]]; then
+      record_check "release:signing_material" "ok" "$key_file + .pub"
+    else
+      record_check "release:signing_material" "fail" "private key found but public key missing: $pub_file"
+      HAS_FAILURE=1
+    fi
+  else
+    record_check "release:signing_material" "fail" "key file not found: $key_file"
+    HAS_FAILURE=1
+  fi
+fi
+
+# Check for signed release bundle
+manifest_sig=""
+for candidate in \
+    "$ROOT_DIR/artifacts/release/release_manifest.sig" \
+    "$ROOT_DIR/artifacts/testnet/release_manifest.sig" \
+    "$ROOT_DIR/artifacts/devnet/release_manifest.sig"; do
+  if [[ -f "$candidate" ]]; then
+    manifest_sig="$candidate"
+    break
+  fi
+done
+if [[ -n "$manifest_sig" ]]; then
+  record_check "release:signed_bundle" "ok" "$manifest_sig"
+else
+  record_check "release:signed_bundle" "fail" "no signed release bundle found — run Gate 2 (scripts/promote.sh --env devnet --gate 2)"
+  HAS_FAILURE=1
+fi
+
+# ── Hypervisor / virsh availability check ────────────────────────────────────
+if command -v virsh >/dev/null 2>&1; then
+  if virsh list --all >/dev/null 2>&1; then
+    vm_count="$(virsh list --all --name 2>/dev/null | grep -c '\S' || echo 0)"
+    record_check "hypervisor:virsh" "ok" "${vm_count} VMs accessible"
+  else
+    record_check "hypervisor:virsh" "fail" "virsh available but cannot list VMs — check libvirtd"
+    HAS_FAILURE=1
+  fi
+else
+  # virsh is only required on the baremetal hypervisor host.
+  # On devnet/testnet VMs, this is informational only.
+  host_role="${HOST_ROLE:-}"
+  if [[ "$host_role" == "hypervisor" ]]; then
+    record_check "hypervisor:virsh" "fail" "virsh unavailable — run this preflight from the hypervisor host (HOST_ROLE=hypervisor)"
+    HAS_FAILURE=1
+  else
+    record_check "hypervisor:virsh" "skip" "virsh not present (not a hypervisor host)"
+  fi
+fi
+
+# ── SSH reachability: testnet guests ─────────────────────────────────────────
+declare -A TESTNET_SSH_HOSTS=(
+  [ghostchain-testnet-l1]="10.50.10.11"
+  [ghost-testnet-validator]="10.50.10.13"
+  [ghostl2-testnet]="10.50.20.11"
+  [ghostl3-testnet]="10.50.30.11"
+)
+if [[ "${CHECK_TESTNET_SSH:-0}" == "1" ]]; then
+  ssh_failures=0
+  for alias in "${!TESTNET_SSH_HOSTS[@]}"; do
+    ip="${TESTNET_SSH_HOSTS[$alias]}"
+    if nc -z -w5 "$ip" 22 2>/dev/null; then
+      record_check "ssh:testnet:$alias" "ok" "$ip:22"
+    else
+      record_check "ssh:testnet:$alias" "fail" "$ip:22 refused — run from hypervisor host"
+      ssh_failures=1
+    fi
+  done
+  [[ "$ssh_failures" -ne 0 ]] && HAS_FAILURE=1
+else
+  record_check "ssh:testnet" "skip" "set CHECK_TESTNET_SSH=1 to probe testnet guest port 22"
 fi
 
 python3 - "$CHECKS_FILE" "$SUMMARY_JSON" <<'PY'

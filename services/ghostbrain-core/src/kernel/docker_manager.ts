@@ -24,6 +24,7 @@
  *   DOCKER_HTTP     TCP override (e.g. http://localhost:2375)
  */
 
+import http from "node:http";
 import { request } from "undici";
 import type { KernelCommand, KernelResult, KernelHandler } from "./kernel_types.js";
 import { log } from "../observability/event_logger.js";
@@ -73,6 +74,39 @@ async function dockerPost(
   const sp       = _socketPath();
   const origin   = _origin();
 
+  if (sp) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const req = http.request(
+          {
+            socketPath: sp,
+            path,
+            method: "POST",
+            headers: { Host: "docker", "Content-Length": "0" },
+            timeout: 15_000,
+          },
+          (res) => {
+            const ok = (res.statusCode ?? 500) >= 200 && (res.statusCode ?? 500) < 300;
+            res.resume();
+            res.on("end", () => {
+              if (ok) resolve();
+              else reject(new Error(`docker_http_status_${res.statusCode ?? 500}`));
+            });
+          },
+        );
+
+        req.on("timeout", () => req.destroy(new Error("docker_socket_timeout")));
+        req.on("error", reject);
+        req.end();
+      });
+
+      return { ok: true, detail: "HTTP 204" };
+    } catch (err) {
+      log.warn("docker_manager: api_error", `${action} ${containerName} → ${String(err)}`);
+      return { ok: false, detail: String(err) };
+    }
+  }
+
   try {
     const res = await request(origin, {
       path,
@@ -80,7 +114,6 @@ async function dockerPost(
       headers:        { Host: "docker", "Content-Length": "0" },
       bodyTimeout:    15_000,
       connectTimeout: 5_000,
-      ...(sp ? { socketPath: sp } : {}),
     } as Parameters<typeof request>[1]);
     await res.body.dump();  // drain (required by undici)
     const ok = res.statusCode >= 200 && res.statusCode < 300;

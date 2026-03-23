@@ -23,6 +23,7 @@
  * Circuit breaker: max REPAIR_MAX_PER_HOUR repairs per resource per hour.
  */
 
+import http from "node:http";
 import { request }               from "undici";
 import { observe_task }          from "./task_learning_engine.js";
 import { store_decision }        from "./memory_engine.js";
@@ -101,15 +102,45 @@ function evaluateRepairPolicy(req: RepairRequest): PolicyDecision {
 // ── Docker helpers ────────────────────────────────────────────────────────────
 
 async function dockerPost(path: string): Promise<boolean> {
+  const socketPath = DOCKER_HTTP ? undefined : DOCKER_SOCKET.replace(/^unix:\/\//, "");
+  if (socketPath) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const req = http.request(
+          {
+            socketPath,
+            path,
+            method: "POST",
+            headers: { Host: "docker", "Content-Length": "0" },
+            timeout: 15_000,
+          },
+          (res) => {
+            const ok = (res.statusCode ?? 500) < 300;
+            res.resume();
+            res.on("end", () => {
+              if (ok) resolve();
+              else reject(new Error(`docker_http_status_${res.statusCode ?? 500}`));
+            });
+          },
+        );
+
+        req.on("timeout", () => req.destroy(new Error("docker_socket_timeout")));
+        req.on("error", reject);
+        req.end();
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   try {
-    const socketPath = DOCKER_HTTP ? undefined : DOCKER_SOCKET.replace(/^unix:\/\//, "");
     const origin     = DOCKER_HTTP || "http://localhost";
     const opts = {
       path,
       method: "POST" as const,
       headers: { Host: "docker", "Content-Length": "0" },
       bodyTimeout: 15_000,
-      ...(socketPath ? { socketPath } : {}),
     };
     const res = await request(origin, opts);
     return res.statusCode < 300;

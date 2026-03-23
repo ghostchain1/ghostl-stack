@@ -1,0 +1,313 @@
+# Ghost Promotion Gate — Gates 5 + 6: Mainnet Deployment + Post-Deploy Verification
+# ──────────────────────────────────────────────────────────────────────────────
+# Defines all checks required to authorize and verify a mainnet promotion.
+# Gate 5 = deployment authorization (requires governance approval from Gate 4).
+# Gate 6 = post-deploy verification (run after stack is live).
+#
+# Executed by:
+#   scripts/promote.sh --env mainnet --gate 5 --proposal-id <ID>
+#   scripts/promote.sh --env mainnet --gate 6
+#
+# Prerequisites: Gates 1, 2, 3, 4 must all have passed.
+# See: docs/PROMOTION_POLICY.md § Gates 4-6
+# ──────────────────────────────────────────────────────────────────────────────
+
+gates:
+  - gate: 4
+    name: "Governance Approval"
+    environment: testnet
+    blocking: true
+    description: >
+      Before mainnet deployment is authorized, a governance proposal must reach
+      quorum on GhostChainGovernor. AI (GhostBrain) may draft proposals;
+      humans must ratify. All advisory proposals route through signing relay
+      at http://localhost:7910 — never executed inline.
+
+    required_inputs:
+      - name: PROPOSAL_ID
+        description: "GhostChainGovernor proposal ID"
+        required: true
+      - name: "artifacts/testnet/evidence-${GHOST_RELEASE_VERSION}.json"
+        description: "Testnet evidence report (from Gate 3)"
+        required: true
+
+    checks:
+      - id: governance_verify
+        name: "Governance proposal verification"
+        description: "Confirm proposal reached quorum and was ratified on GhostChainGovernor"
+        command: "bash scripts/verify-governance.sh --proposal-id ${PROPOSAL_ID}"
+        blocking: true
+        on_fail: "Governance verification failed. Proposal may not have reached quorum."
+
+      - id: testnet_evidence_present
+        name: "Testnet evidence report present"
+        description: "Gate 3 evidence file must exist and contain required rehearsal results"
+        type: file_exists
+        path: "artifacts/testnet/evidence-${GHOST_RELEASE_VERSION}.json"
+        blocking: true
+        on_fail: "No testnet evidence report found. Complete Gate 3 before governance approval."
+
+    outputs:
+      artifact: "artifacts/release/governance-approval.json"
+
+  - gate: 5
+    name: "Mainnet Deployment"
+    environment: mainnet
+    blocking: true
+    description: >
+      Deploys the exact, signed, governance-approved artifact set to mainnet.
+      Zero rebuilds. Zero env-specific modifications.
+      No binary may run on mainnet that was not in the frozen artifact set.
+
+    required_inputs:
+      - name: PROPOSAL_ID
+        description: "Governance proposal ID (from Gate 4)"
+        required: true
+      - name: MAINNET_RELEASE_GATE_ADDRESS
+        description: "On-chain MainnetReleaseGate contract address"
+        required: true
+      - name: RELEASE_ATTESTATION_PRIVATE_KEY_FILE
+        description: "PEM private key for release signature verification"
+        required: true
+      - name: "artifacts/release/release_manifest.json"
+        description: "Frozen manifest from Gate 2"
+        required: true
+      - name: "artifacts/release/release_manifest.sig"
+        description: "Manifest signature from Gate 2"
+        required: true
+      - name: "artifacts/release/governance-approval.json"
+        description: "Governance approval record from Gate 4"
+        required: true
+
+    checks:
+      - id: on_chain_release_gate
+        name: "On-chain release gate (isMainnetLaunchAllowed)"
+        description: >
+          Calls isMainnetLaunchAllowed() on the MainnetReleaseGate contract.
+          Must return true before deployment proceeds.
+        command: >
+          RPC_L1="${RPC_L1:-http://localhost:18545}"
+          MAINNET_RELEASE_GATE_ADDRESS="${MAINNET_RELEASE_GATE_ADDRESS}"
+          MANIFEST_PATH="artifacts/release/release_manifest.json"
+          bash scripts/verify-release-gate.sh --proposal-id "${PROPOSAL_ID}"
+        blocking: true
+        on_fail: >
+          On-chain release gate denied. Possible causes:
+          1. Governance proposal not executed on-chain yet
+          2. ReleaseGate contract paused (check CircuitBreaker)
+          3. Wrong MAINNET_RELEASE_GATE_ADDRESS
+
+      - id: attestation_verify
+        name: "Release manifest signature verification"
+        description: "Verify that release_manifest.json signature matches the known release key"
+        command: >
+          MANIFEST_PATH="artifacts/release/release_manifest.json"
+          bash scripts/release/verify-release-attestation.sh
+        blocking: true
+        on_fail: "Manifest signature invalid. Artifact may have been tampered with. Halt immediately."
+
+      - id: manifest_schema_valid
+        name: "Manifest schema validation"
+        description: "release_manifest.json validates against release/manifest.schema.json"
+        command: >
+          python3 -c "
+          import json, jsonschema, pathlib
+          schema = json.loads(pathlib.Path('release/manifest.schema.json').read_text())
+          instance = json.loads(pathlib.Path('artifacts/release/release_manifest.json').read_text())
+          jsonschema.validate(instance, schema)
+          print('schema:OK')
+          "
+        blocking: true
+        on_fail: "Manifest does not validate against schema. Re-run Gate 2."
+
+      - id: environment_field_check
+        name: "Manifest environment field is 'mainnet'"
+        description: "Prevents accidentally deploying a devnet or testnet manifest to mainnet"
+        type: json_field
+        path: "artifacts/release/release_manifest.json"
+        field: "environment"
+        expected: "mainnet"
+        blocking: true
+        on_fail: >
+          Manifest environment field is not 'mainnet'. This artifact was not
+          frozen for mainnet. Re-freeze with environment=mainnet.
+
+      - id: no_dirty_checksums
+        name: "Artifact checksums match frozen manifest"
+        description: >
+          All files listed in release_manifest.json artifactChecksums must match
+          their current sha256. Any drift = tampered artifact.
+        command: "bash -c 'sha256sum --check artifacts/release/checksums.txt --quiet'"
+        blocking: true
+        on_fail: "Checksum mismatch detected. Artifact bundle is corrupted or modified."
+
+    deployment_instructions: |
+      OPERATOR: Deploy using the exact artifact set. Steps:
+      1. Vault-inject production secrets (never embed in manifests)
+      2. Run: bash infra/scripts/production/configure-build-ready.sh --mode=production --secrets=vault
+      3. Startup order: Secrets → L1 → L2 → L3 → Bridge → GhostBrain → Apps → Observability
+      4. DO NOT modify any config between artifact freeze and deployment
+      5. DO NOT run any builds during deployment
+      6. Proceed immediately to Gate 6 after startup completes
+
+    outputs:
+      artifact: "artifacts/release/release_gate_verification.json"
+
+  - gate: 6
+    name: "Post-Deploy Verification"
+    environment: mainnet
+    blocking: true
+    description: >
+      Final health confirmation after mainnet deployment. Every check here
+      is a hard requirement — any failure must trigger the incident response
+      runbook (docs/INCIDENT_RESPONSE.md) and may require rollback.
+
+    checks:
+      # ── Chain progression ───────────────────────────────────────────────
+      - id: l1_block_progression
+        name: "L1 block progression"
+        description: "L1 must have produced ≥2 blocks since deployment"
+        type: rpc
+        rpc: "${RPC_L1:-http://localhost:18545}"
+        method: "eth_blockNumber"
+        min_increment: 2
+        blocking: true
+        on_fail: "L1 not producing blocks. Check Cosmos consensus and EVM execution."
+
+      - id: l2_block_progression
+        name: "L2 block progression"
+        type: rpc
+        rpc: "${RPC_L2:-http://localhost:29545}"
+        method: "eth_blockNumber"
+        min_increment: 2
+        blocking: true
+        on_fail: "L2 not producing blocks. Check op-geth and op-node."
+
+      - id: l3_block_progression
+        name: "L3 block progression"
+        type: rpc
+        rpc: "${RPC_L3:-http://localhost:39545}"
+        method: "eth_blockNumber"
+        min_increment: 2
+        blocking: true
+        on_fail: "L3 not producing blocks. Check L3 op-geth and op-node."
+
+      # ── Chain IDs ──────────────────────────────────────────────────────
+      - id: l1_chain_id_post
+        name: "L1 chain ID post-deploy"
+        type: rpc
+        rpc: "${RPC_L1:-http://localhost:18545}"
+        method: "eth_chainId"
+        expected_result: "0xd59465"
+        blocking: true
+        on_fail: "L1 chain ID wrong post-deploy. Critical: halt and investigate."
+
+      - id: l2_chain_id_post
+        name: "L2 chain ID post-deploy"
+        type: rpc
+        rpc: "${RPC_L2:-http://localhost:29545}"
+        method: "eth_chainId"
+        expected_result: "0x385"
+        blocking: true
+        on_fail: "L2 chain ID wrong post-deploy. Critical: halt and investigate."
+
+      - id: l3_chain_id_post
+        name: "L3 chain ID post-deploy"
+        type: rpc
+        rpc: "${RPC_L3:-http://localhost:39545}"
+        method: "eth_chainId"
+        expected_result: "0x387"
+        blocking: true
+        on_fail: "L3 chain ID wrong post-deploy. Critical: halt and investigate."
+
+      # ── Core services ──────────────────────────────────────────────────
+      - id: ghostbrain_health
+        name: "GhostBrain Core health"
+        type: http
+        url: "http://localhost:7900/health"
+        expected_status: 200
+        timeout_seconds: 15
+        blocking: true
+        on_fail: "GhostBrain not healthy. Check service logs and AI layer restart policy."
+
+      - id: treasury_engine_health
+        name: "Treasury Engine health"
+        type: http
+        url: "http://localhost:7683/health"
+        expected_status: 200
+        blocking: true
+        on_fail: "Treasury Engine not healthy. Check sovereign treasury contracts."
+
+      - id: l3_fee_collector_health
+        name: "L3 Fee Collector health"
+        type: http
+        url: "http://localhost:7681/health"
+        expected_status: 200
+        blocking: false
+        on_fail: "L3 Fee Collector not healthy. Non-blocking but must be resolved within 1 hour."
+
+      - id: l2_revenue_aggregator_health
+        name: "L2 Revenue Aggregator health"
+        type: http
+        url: "http://localhost:7682/health"
+        expected_status: 200
+        blocking: false
+        on_fail: "L2 Revenue Aggregator not healthy."
+
+      # ── Observability ─────────────────────────────────────────────────
+      - id: prometheus_ready_post
+        name: "Prometheus ready post-deploy"
+        type: http
+        url: "http://localhost:9090/-/ready"
+        expected_status: 200
+        blocking: true
+        on_fail: "Prometheus not ready. Observability blind spot — fix before declaring success."
+
+      - id: grafana_healthy
+        name: "Grafana healthy"
+        type: http
+        url: "http://localhost:3000/api/health"
+        expected_status: 200
+        blocking: false
+        on_fail: "Grafana not healthy. Non-blocking but dashboard access is impaired."
+
+      # ── Bridge + relayers ─────────────────────────────────────────────
+      - id: bridge_relayer_active
+        name: "Bridge relayers active"
+        description: "Bridge relayer processes running and not in error state"
+        type: manual
+        blocking: true
+        operator_prompt: |
+          Verify bridge relayers are running:
+          - Check docker ps for relayer containers
+          - Check relayer logs for any settlement failures
+          - Confirm L2→L1 message queue is being processed
+        on_fail: >
+          Bridge relayers not active. Cross-chain messaging is broken.
+          Consult docs/INCIDENT_RESPONSE.md § Bridge Failure.
+
+      # ── Container stability ───────────────────────────────────────────
+      - id: no_unexpected_restarts
+        name: "No unexpected container restarts since deploy"
+        description: "Zero restart count on core containers in the first 5 minutes"
+        type: manual
+        blocking: false
+        operator_prompt: |
+          Run: docker ps --format 'table {{.Names}}\t{{.Status}}'
+          Check for any (Restarting) or high restart count entries.
+          Acceptable: 0 restarts on l1/l2/l3/bridge/ghostbrain containers.
+        on_fail: "Unexpected restarts detected. Monitor closely and check supervisor logs."
+
+    on_all_pass: |
+      Mainnet promotion is COMPLETE.
+      Record final verification in artifacts/release/postdeploy-verification.json
+      Announce to chain governance channels.
+      Begin monitoring runbook: docs/RUNBOOK.md
+
+    on_any_block_fail: |
+      HALT. Do not declare mainnet live.
+      Consult: docs/INCIDENT_RESPONSE.md
+      Consider rollback: bash scripts/testnet/90-rollback.sh (apply to mainnet)
+
+    outputs:
+      artifact: "artifacts/release/postdeploy-verification.json"

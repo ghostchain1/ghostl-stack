@@ -8,6 +8,7 @@
  * Called periodically by the decision loop to feed InfrastructureMemory.
  */
 
+import http from "node:http";
 import { request } from "undici";
 import { recordInfraSnapshot } from "../memory/infrastructure_memory.js";
 
@@ -26,12 +27,46 @@ function dockerPath(): string | undefined {
 }
 
 async function dockerGet<T>(path: string): Promise<T | null> {
+  const socketPath = dockerPath();
+  if (socketPath) {
+    try {
+      const body = await new Promise<string>((resolve, reject) => {
+        const req = http.request(
+          {
+            socketPath,
+            path,
+            method: "GET",
+            headers: { Host: "docker" },
+            timeout: 5_000,
+          },
+          (res) => {
+            if ((res.statusCode ?? 500) !== 200) {
+              reject(new Error(`docker_http_status_${res.statusCode ?? 500}`));
+              res.resume();
+              return;
+            }
+
+            let chunks = "";
+            res.setEncoding("utf8");
+            res.on("data", (chunk) => { chunks += chunk; });
+            res.on("end", () => resolve(chunks));
+          },
+        );
+
+        req.on("timeout", () => req.destroy(new Error("docker_socket_timeout")));
+        req.on("error", reject);
+        req.end();
+      });
+
+      return JSON.parse(body) as T;
+    } catch {
+      return null;
+    }
+  }
+
   try {
-    const socketPath = dockerPath();
     const origin     = dockerOrigin();
-    const opts = socketPath
-      ? { path, method: "GET" as const, headers: { Host: "docker" }, bodyTimeout: 5_000, connectTimeout: 3_000, socketPath }
-      : { path, method: "GET" as const, headers: { Host: "docker" }, bodyTimeout: 5_000, connectTimeout: 3_000 };
+    const opts = { path, method: "GET" as const, headers: { Host: "docker" }, bodyTimeout: 5_000, connectTimeout: 3_000 };
 
     const res  = await request(origin, opts as Parameters<typeof request>[1]);
     if (res.statusCode !== 200) return null;

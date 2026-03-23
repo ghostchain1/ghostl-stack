@@ -1081,3 +1081,65 @@ infra/gsa/terraform/.terraform/
 infra/gsa/terraform/*.tfstate
 infra/gsa/terraform/*.tfvars
 infra/gsa/k8s/**/*.secret.yaml
+node_modules
+
+# ════════════════════════════════════════════════════════════════════════════
+# HOME DIRECTORY — personal / system files (repo root is /home/ghost)
+# Added 2026-03-23
+# ════════════════════════════════════════════════════════════════════════════
+
+# Shell history & profile
+.bash_history
+.bash_logout
+.bashrc
+.profile
+.zsh_history
+.zshrc
+.lesshst
+.wget-hsts
+.sudo_as_admin_successful
+.netrc
+
+# User-local runtime data
+.config/
+.local/
+.cache/
+.npm/
+.dotnet/
+.snap/
+snap/
+
+# VS Code server (large IDE runtime, not project code)
+.vscode-server/
+
+# Copilot / Codex IDE state
+.copilot/
+.codex/
+
+# Foundry root-level install (distinct from contracts/.foundry/)
+.foundry/
+
+# Go runtime installation (managed separately)
+go/
+
+# Embedded repo clones / external workspace dirs
+ghostl-stack-v2/
+ghostl-stack-v2-standalone/
+ghost-web/
+hyperghost-tooling/
+
+# Symlinks to external storage
+backups
+tmp
+geth/
+
+# Runtime data at repo root
+data/
+release/
+artifacts/release/
+
+# Backup files (timestamped / swap)
+*.bak
+*.bak-*
+docker-compose.*.bak-*
+scripts/*.bak-*

@@ -1,0 +1,116 @@
+# Ghost Promotion Gate — Gate 1: Devnet Validation
+# ──────────────────────────────────────────────────────────────────────────────
+# Canonical definition of all checks that must pass before artifacts are frozen.
+# Executed by: scripts/promote.sh --env devnet --gate 1
+# See: docs/PROMOTION_POLICY.md § Gate 1
+# ──────────────────────────────────────────────────────────────────────────────
+
+gate: 1
+name: "Devnet Validation"
+environment: devnet
+blocking: true  # Failure must halt promotion
+
+checks:
+  # ── Branding & token leakage ──────────────────────────────────────────────
+  - id: gst_leakage_gate
+    name: "GST leakage gate"
+    description: "No non-GST external token integrations present"
+    command: "bash scripts/gst-leakage-gate.sh"
+    blocking: true
+    on_fail: "Non-GST token integration detected. Remove all ETH/WETH/ERC-20 references."
+
+  - id: gst_symbol_gate
+    name: "GST symbol consistency"
+    description: "All gas token references use the GST symbol"
+    command: "bash scripts/gst-symbol-gate.sh"
+    blocking: true
+    on_fail: "Inconsistent gas token symbol found. Must be 'GST' everywhere."
+
+  - id: gst_ai_policy_gate
+    name: "GhostBrain AI policy gate"
+    description: "AI policy configuration is GST-compliant"
+    command: "bash scripts/gst-ai-policy-gate.sh"
+    blocking: true
+    on_fail: "AI policy gate failed. Check GhostBrain configuration."
+
+  # ── Chain identity ────────────────────────────────────────────────────────
+  - id: l1_chain_id
+    name: "L1 chain ID"
+    description: "GhostChain L1 responds with chain ID 14000101 (0xD59465)"
+    type: rpc
+    rpc: "${RPC_L1:-http://localhost:18545}"
+    method: "eth_chainId"
+    expected_result: "0xd59465"
+    blocking: true
+    on_fail: "L1 RPC not healthy or wrong chain ID. Expected 14000101."
+
+  - id: l2_chain_id
+    name: "L2 chain ID"
+    description: "GhostL2 responds with chain ID 901 (0x385)"
+    type: rpc
+    rpc: "${RPC_L2:-http://localhost:29545}"
+    method: "eth_chainId"
+    expected_result: "0x385"
+    blocking: true
+    on_fail: "L2 RPC not healthy or wrong chain ID. Expected 901."
+
+  - id: l3_chain_id
+    name: "L3 chain ID"
+    description: "GhostL3 responds with chain ID 903 (0x387)"
+    type: rpc
+    rpc: "${RPC_L3:-http://localhost:39545}"
+    method: "eth_chainId"
+    expected_result: "0x387"
+    blocking: true
+    on_fail: "L3 RPC not healthy or wrong chain ID. Expected 903."
+
+  # ── Routing law ───────────────────────────────────────────────────────────
+  - id: routing_law
+    name: "Routing law enforcement"
+    description: "L3 → L2 → L1 routing invariant holds; no L3-to-L1 direct paths"
+    command: "bash scripts/verify-routing.sh"
+    blocking: true
+    on_fail: "Routing law violation detected. Check packages/routing-guard/."
+
+  # ── Bridge contracts ──────────────────────────────────────────────────────
+  - id: bridge_l2l3
+    name: "L2L3Bridge reachable"
+    description: "L2L3Bridge at 0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2 has code"
+    type: has_code
+    rpc: "${RPC_L2:-http://localhost:29545}"
+    address: "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2"
+    blocking: true
+    on_fail: "L2L3Bridge contract has no code at canonical address."
+
+  - id: bridge_l1_rollup
+    name: "L1 Rollup (L2) reachable"
+    description: "L1 Rollup at 0xad32D5C2Da9f4159C4cc98686C005852b3905355 has code"
+    type: has_code
+    rpc: "${RPC_L1:-http://localhost:18545}"
+    address: "0xad32D5C2Da9f4159C4cc98686C005852b3905355"
+    blocking: false
+    on_fail: "L1 Rollup contract not found. Expected at canonical address."
+
+  # ── Observability ─────────────────────────────────────────────────────────
+  - id: prometheus_ready
+    name: "Prometheus ready"
+    description: "Prometheus is healthy and scraping targets"
+    type: http
+    url: "http://localhost:9090/-/ready"
+    expected_status: 200
+    blocking: false
+    on_fail: "Prometheus not ready. Start observability stack first."
+
+  # ── Git hygiene ───────────────────────────────────────────────────────────
+  - id: git_clean_tree
+    name: "No uncommitted config drift"
+    description: "git diff --exit-code — working tree must be clean before freeze"
+    command: "git diff --exit-code --quiet"
+    blocking: true
+    on_fail: |
+      Uncommitted changes found. Commit or stash before proceeding to Gate 2.
+      Run: git status
+
+outputs:
+  artifact_dir: "artifacts/release"
+  evidence_key: "gate1_devnet_validation"

@@ -1,0 +1,181 @@
+# Ghost Promotion Gate — Gate 3: Testnet Simulation
+# ──────────────────────────────────────────────────────────────────────────────
+# Canonical definition of all rehearsals that must pass on testnet VMs before
+# a governance proposal may be submitted for mainnet promotion.
+# Executed by: scripts/promote.sh --env testnet --gate 3
+# Prerequisites: Gate 2 (artifact freeze) must have passed.
+# See: docs/PROMOTION_POLICY.md § Gate 3
+# ──────────────────────────────────────────────────────────────────────────────
+
+gate: 3
+name: "Testnet Simulation"
+environment: testnet
+blocking: true
+
+# ── Prerequisite: artifact bundle must exist and be signed ──────────────────
+prerequisites:
+  - artifact: "artifacts/release/release_manifest.json"
+    description: "Release manifest from Gate 2 must exist"
+  - artifact: "artifacts/release/checksums.txt"
+    description: "Artifact checksums must exist"
+
+# ── Testnet lifecycle checks ─────────────────────────────────────────────────
+checks:
+  - id: preflight
+    name: "Testnet preflight"
+    description: "Environment readiness, port availability, image presence"
+    command: "bash scripts/testnet/00-preflight.sh"
+    blocking: true
+    on_fail: "Testnet environment not ready. Check dependencies and Docker images."
+
+  - id: artifact_apply
+    name: "Apply artifact set (no source builds)"
+    description: >
+      Deploy from versioned artifacts only. Zero source compilation
+      happens in testnet — if this step requires a build, Gate 2 failed.
+    command: "ARTIFACT_DIR=artifacts/release bash scripts/testnet/10-build.sh"
+    blocking: true
+    on_fail: "Artifact apply failed. Source rebuild detected — re-run Gate 2."
+
+  - id: stack_up
+    name: "Full stack startup"
+    description: >
+      Start L1 → L2 → L3 → Bridge → GhostBrain → Apps → Observability
+      in canonical startup order. Each layer must be healthy before the next starts.
+    command: "bash scripts/testnet/20-up.sh"
+    blocking: true
+    timeout_seconds: 300
+    on_fail: >
+      Stack failed to start. Check orchestrator logs for the failing layer.
+      Remember: L2 requires L1, L3 requires L2, Bridge requires all chains.
+
+  - id: chain_verification
+    name: "Chain ID + routing + tx proof bundle"
+    description: >
+      Verifies chain IDs on L1/L2/L3, routing law, and collects the
+      required tx proof bundle (L3_TX_HASH, L2_INCLUSION_TX_HASH,
+      L1_SETTLEMENT_TX_HASH, MESSENGER_ROUNDTRIP_PROOF).
+    command: "ARTIFACT_DIR=artifacts/testnet bash scripts/testnet/30-verify.sh"
+    blocking: true
+    required_env:
+      - L3_TX_HASH
+      - L2_INCLUSION_TX_HASH
+      - L1_SETTLEMENT_TX_HASH
+      - MESSENGER_ROUNDTRIP_PROOF
+    on_fail: >
+      Chain verification failed or proof bundle incomplete.
+      Provide all four tx hash/proof env vars before proceeding.
+
+  - id: snapshot
+    name: "Testnet state snapshot"
+    description: "Backup testnet state for evidence record and rollback capability"
+    command: "ARTIFACT_DIR=artifacts/testnet bash scripts/testnet/40-backup.sh"
+    blocking: false
+    on_fail: "Snapshot failed — continue but flag for manual backup."
+
+  # ── Rehearsal gates ───────────────────────────────────────────────────────
+  - id: upgrade_rehearsal
+    name: "Upgrade rehearsal (N → N+1)"
+    description: >
+      Deploy next-version artifact set on top of currently-running testnet.
+      Chain must continue producing blocks with no gaps > 1 block.
+    type: manual
+    blocking: true
+    operator_prompt: |
+      1. Deploy the N+1 artifact set: ARTIFACT_DIR=artifacts/release-next bash scripts/testnet/10-build.sh
+      2. Restart services: bash scripts/testnet/20-up.sh
+      3. Confirm blocks continue: check L1/L2/L3 block heights increasing
+      4. Record 'upgrade_rehearsal_passed=true' in artifacts/testnet/rehearsal-log.json
+    on_fail: "Upgrade rehearsal must pass before governance approval."
+
+  - id: rollback_rehearsal
+    name: "Rollback rehearsal (N+1 → N)"
+    description: >
+      Revert to previous artifact set. Chain must recover within SLA.
+      Executed via: bash scripts/testnet/90-rollback.sh
+    command: "bash scripts/testnet/90-rollback.sh"
+    blocking: true
+    on_fail: >
+      Rollback failed or recovery exceeded SLA.
+      Do NOT proceed to mainnet promotion until rollback is proven.
+
+  - id: bridge_stress_test
+    name: "Bridge stress test (L3 → L2 → L1)"
+    description: >
+      Submit ≥10 L3 transactions, confirm L2 inclusion, confirm L1 settlement.
+      Bridge relayers must clear the backlog within the configured window.
+    type: manual
+    blocking: true
+    operator_prompt: |
+      Run bridge stress test using GhostBrain simulation or manual tx submission.
+      Required artifacts:
+        - artifacts/testnet/bridge-stress-l3-txs.json
+        - artifacts/testnet/bridge-stress-l2-inclusions.json
+        - artifacts/testnet/bridge-stress-l1-settlements.json
+    on_fail: "Bridge stress test failed. Do not promote until bridge is proven under load."
+
+  - id: governance_simulation
+    name: "Governance action simulation"
+    description: >
+      Submit a test proposal via GhostChainGovernor, vote, and execute on testnet.
+      Validates the full proposal → quorum → execution path.
+    type: manual
+    blocking: true
+    operator_prompt: |
+      Run: node scripts/propose_chain_policy.mjs --env testnet --simulate
+      Confirm proposal reaches quorum and executes without reverting.
+      Record proposal ID in artifacts/testnet/governance-sim.json
+    on_fail: "Governance simulation failed. Fix governor or proposal format before mainnet."
+
+  - id: config_drift_check
+    name: "Config integrity (no drift between manifest and running state)"
+    description: >
+      Confirm no container is running with config that differs from the
+      release manifest. Catches cases where manual edits slipped in.
+    type: manual
+    blocking: true
+    operator_prompt: |
+      Compare manifest artifact checksums against deployed container configs.
+      Zero drift is required. Any diff must be evidenced and re-frozen.
+    on_fail: "Config drift detected. Re-freeze artifacts with correct config."
+
+  # ── Chain identity confirmation ───────────────────────────────────────────
+  - id: testnet_l1_chain_id
+    name: "Testnet L1 chain ID"
+    type: rpc
+    rpc: "${RPC_L1:-http://localhost:18545}"
+    method: "eth_chainId"
+    expected_result: "0xd59465"
+    blocking: true
+    on_fail: "L1 chain ID wrong on testnet stack."
+
+  - id: testnet_l2_chain_id
+    name: "Testnet L2 chain ID"
+    type: rpc
+    rpc: "${RPC_L2:-http://localhost:29545}"
+    method: "eth_chainId"
+    expected_result: "0x385"
+    blocking: true
+    on_fail: "L2 chain ID wrong on testnet stack."
+
+  - id: testnet_l3_chain_id
+    name: "Testnet L3 chain ID"
+    type: rpc
+    rpc: "${RPC_L3:-http://localhost:39545}"
+    method: "eth_chainId"
+    expected_result: "0x387"
+    blocking: true
+    on_fail: "L3 chain ID wrong on testnet stack."
+
+outputs:
+  artifact_dir: "artifacts/testnet"
+  evidence_file: "artifacts/testnet/evidence-${GHOST_RELEASE_VERSION}.json"
+  evidence_keys:
+    - "preflight"
+    - "chain_verification"
+    - "tx_proof_bundle"
+    - "upgrade_rehearsal"
+    - "rollback_rehearsal"
+    - "bridge_stress_test"
+    - "governance_simulation"
+    - "config_drift_check"

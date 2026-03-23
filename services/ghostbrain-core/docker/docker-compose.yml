@@ -12,8 +12,6 @@
 #
 # Environment: copy stack.env.example → .env at repo root before running.
 
-version: "3.9"
-
 networks:
   ghostbrain:
     name: ghostbrain
@@ -56,6 +54,8 @@ services:
     volumes:
       - ghostbrain_memory:/var/ghostbrain/memory
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    group_add:
+      - "${DOCKER_SOCKET_GID:-1000}"
     networks:
       - ghostbrain
     depends_on:
@@ -87,10 +87,17 @@ services:
       - REDIS_URL=redis://ghostbrain-redis:6379
       - QDRANT_URL=http://ghostbrain-qdrant:6333
       - DOCKER_SOCKET=/var/run/docker.sock
+      - PROMETHEUS_URL=${PROMETHEUS_URL:-http://observability-prometheus:9090}
+      - GHOSTCHAIN_L1_RPC=${GHOSTCHAIN_L1_RPC:-http://ghostchain-evm:18545}
+      - GHOSTCHAIN_L2_RPC=${GHOSTCHAIN_L2_RPC:-http://op-geth:29545}
+      - GHOSTCHAIN_L3_RPC=${GHOSTCHAIN_L3_RPC:-http://op-geth-l3:39545}
+      - SIGNING_RELAY_URL=${SIGNING_RELAY_URL:-http://signing-relay:7910}
       - REPAIR_DRY_RUN=${REPAIR_DRY_RUN:-1}
     volumes:
       - ghostbrain_memory:/var/ghostbrain/memory
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    group_add:
+      - "${DOCKER_SOCKET_GID:-1000}"
     networks:
       - ghostbrain
     depends_on:

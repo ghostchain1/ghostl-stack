@@ -237,6 +237,14 @@ run_cmd sudo mkdir -p "${VM_IMAGE_DIR}"
 if [[ "${SKIP_VMS}" == "true" ]]; then
   log "  SKIP_VMS=true — VM provisioning skipped."
 else
+  # VM provisioning requires the baremetal hypervisor (libvirt/virsh).
+  # If running inside a devnet/testnet VM, set SKIP_VMS=true.
+  if ! command -v virsh &>/dev/null; then
+    log "  ERROR: virsh is not available on this host."
+    log "  VM provisioning must be run from the GhostStack baremetal hypervisor."
+    log "  If running inside a devnet VM, set SKIP_VMS=true to skip this phase."
+    exit 1
+  fi
   check_cmd virt-install
   check_cmd virsh
 
