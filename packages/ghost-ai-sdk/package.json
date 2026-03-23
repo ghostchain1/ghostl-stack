@@ -21,10 +21,10 @@
   },
   "dependencies": {
     "@ghostchain/sdk": "1.0.0",
-    "ws":     "^8.0.0"
+    "ws":     "^8.20.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^25.5.0",
     "@types/ws":   "^8.0.0",
     "typescript":  "^5.6.0"
   }
