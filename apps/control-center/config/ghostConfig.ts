@@ -31,25 +31,58 @@ export const C3_CONFIG = {
   chains: {
     ghostchain: {
       name:    "GhostChain (L1)",
-      chainId: 1337,
-      rpc:     process.env.NEXT_PUBLIC_GHOSTCHAIN_RPC ?? "http://localhost:8545",
-      symbol:  "GHOST",
+      chainId: 14000101,
+      rpc:     process.env.NEXT_PUBLIC_GHOSTCHAIN_RPC ?? "http://localhost:18545",
+      symbol:  "GST",
       color:   "#7c3aed",
     },
     ghostl2: {
       name:    "GhostL2 (L2)",
-      chainId: 1338,
-      rpc:     process.env.NEXT_PUBLIC_GHOSTL2_RPC ?? "http://localhost:8546",
+      chainId: 901,
+      rpc:     process.env.NEXT_PUBLIC_GHOSTL2_RPC ?? "http://localhost:29545",
       symbol:  "GST",
       color:   "#10b981",
     },
     ghostl3: {
       name:    "GhostL3 (L3)",
-      chainId: 1339,
-      rpc:     process.env.NEXT_PUBLIC_GHOSTL3_RPC ?? "http://localhost:8547",
+      chainId: 903,
+      rpc:     process.env.NEXT_PUBLIC_GHOSTL3_RPC ?? "http://localhost:39545",
       symbol:  "GST",
       color:   "#f59e0b",
     },
+  },
+
+  // ── Backend service URLs ──────────────────────────────────────────────────────
+  services: {
+    ghostbrain:    process.env.NEXT_PUBLIC_GHOSTBRAIN_URL    ?? "http://localhost:7900",
+    chainStatus:   process.env.NEXT_PUBLIC_CHAIN_STATUS_URL  ?? "http://localhost:7701",
+    bridgeService: process.env.NEXT_PUBLIC_BRIDGE_URL        ?? "http://localhost:7702",
+    contractReg:   process.env.NEXT_PUBLIC_CONTRACT_REG_URL  ?? "http://localhost:7703",
+    gnsApi:        process.env.NEXT_PUBLIC_GNS_URL           ?? "http://localhost:7704",
+    authService:   process.env.NEXT_PUBLIC_AUTH_URL          ?? "http://localhost:7705",
+    complianceApi: process.env.NEXT_PUBLIC_COMPLIANCE_URL    ?? "http://localhost:8090",
+    l3FeeCollect:  process.env.NEXT_PUBLIC_L3FEE_URL         ?? "http://localhost:7681",
+    l2RevAgg:      process.env.NEXT_PUBLIC_L2REV_URL         ?? "http://localhost:7682",
+    treasuryEng:   process.env.NEXT_PUBLIC_TREASURY_URL      ?? "http://localhost:7683",
+    rewardDist:    process.env.NEXT_PUBLIC_REWARDS_URL       ?? "http://localhost:7684",
+    cosmosLcd:     process.env.NEXT_PUBLIC_COSMOS_LCD        ?? "http://localhost:1317",
+    cometRpc:      process.env.NEXT_PUBLIC_COMET_RPC         ?? "http://localhost:26657",
+    blockIndex:    process.env.NEXT_PUBLIC_BLOCK_INDEX_URL   ?? "http://localhost:7794",
+    validatorSvc:  process.env.NEXT_PUBLIC_VALIDATOR_URL     ?? "http://localhost:7795",
+    ghostxApi:     process.env.NEXT_PUBLIC_GHOSTX_URL        ?? "http://localhost:7796",
+    gnsIndexer:    process.env.NEXT_PUBLIC_GNS_INDEXER_URL   ?? "http://localhost:7704",
+    securityAi:    process.env.NEXT_PUBLIC_SECURITY_AI_URL   ?? "http://localhost:9977",
+    infraCtrl:     process.env.NEXT_PUBLIC_INFRA_CTRL_URL    ?? "http://localhost:9986",
+  },
+
+  // ── Canonical bridge addresses ────────────────────────────────────────────────
+  bridges: {
+    l2l3Bridge:     "0xDadd1125B8Df98A66Abd5EB302C0d9Ca5A061dC2",
+    l1Rollup:       "0xad32D5C2Da9f4159C4cc98686C005852b3905355",
+    l2Rollup:       "0x130A46b6E41DB6E1e18fb9c759F223c459190e90",
+    finalityOracleL1: "0x7B3Be2dDDdDf9A0a3fE1DC57B98980F662C3a422",
+    finalityOracleL2: "0x650aEF4b63095e4EDe581BC79CdeA927e3ba553A",
+    finalityOracleL3: "0x87F850cbC2cFfac086F20d0d7307E12d06fA2127",
   },
 
   // ── WebSocket (live log stream from SCP) ──────────────────────────────────────

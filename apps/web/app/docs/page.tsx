@@ -155,6 +155,81 @@ export default function DocsPage() {
           ))}
         </div>
       </div>
+
+      {/* Port reference */}
+      <div style={{
+        marginTop: '1.5rem', padding: '1.25rem 1.5rem',
+        background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+      }}>
+        <h3 style={{ color: 'var(--accent-3)', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.75rem' }}>
+          SERVICE PORT REFERENCE
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.4rem' }}>
+          {[
+            ['GhostChain L1 RPC', '18545'],
+            ['GhostL2 RPC', '29545'],
+            ['GhostL3 RPC', '39545'],
+            ['Cosmos LCD', '1317'],
+            ['CometBFT RPC', '26657'],
+            ['Cosmos gRPC', '9090'],
+            ['GhostBrain Core', '7900'],
+            ['L3 Fee Collector', '7681'],
+            ['L2 Revenue Aggregator', '7682'],
+            ['Treasury Engine', '7683'],
+            ['Reward Distributor', '7684'],
+            ['Sovereign Governor', '7685'],
+            ['Signing Relay', '7910'],
+            ['Compliance Service', '8090'],
+            ['GAIS REST API', '9100'],
+            ['Hypervisor Metrics', '9108'],
+            ['PostgreSQL', '5432'],
+            ['Redis', '6379'],
+            ['GNS PostgreSQL', '5433'],
+            ['Gas Engine Redis', '6380'],
+          ].map(([name, port]) => (
+            <div key={name} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>{name}</span>
+              <code style={{ color: 'var(--accent-3)', fontSize: '0.82rem', fontFamily: 'monospace' }}>:{port}</code>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick commands */}
+      <div style={{
+        marginTop: '1.5rem', padding: '1.25rem 1.5rem',
+        background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+      }}>
+        <h3 style={{ color: 'var(--accent-2)', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.75rem' }}>
+          QUICK REFERENCE — BUILD COMMANDS
+        </h3>
+        <pre style={{
+          margin: 0, fontFamily: 'ui-monospace,monospace', fontSize: '0.82rem',
+          color: 'var(--muted)', lineHeight: 1.7, whiteSpace: 'pre-wrap',
+        }}>{`# Contracts (Foundry)
+cd contracts && forge build              # compile (via_ir=true, optimizer 200)
+forge test                               # run default profile tests
+FOUNDRY_PROFILE=gns forge test          # GNS-only tests
+npm --prefix contracts run formal:slither  # Slither static analysis
+
+# Root workspace
+npm install                              # Node >=22.21.0 <23
+npm run build                            # apps/api + apps/web
+npm run brand:full                       # 15-layer branding audit (must exit 0)
+npm run gst:leakage                      # fail-closed non-GST token check
+npm run test:foundry                     # forge tests from root
+npm run phase2:preflight                 # run before governance deploy
+
+# OP Stack
+npm run preflight:opstack                # validate L2/L3 chain configs
+npm run env:sync:opstack                 # sync env from L1/L2 deployments
+npm run env:sync:opstack:l3             # sync env from L2/L3 deployments
+
+# Devnet
+cp stack.env.example .env               # configure environment
+docker compose up -d                    # start full devnet`}
+        </pre>
+      </div>
     </div>
   );
 }

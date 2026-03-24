@@ -1,0 +1,13 @@
+$ORIGIN 122.168.192.in-addr.arpa.
+$TTL 300
+@   IN  SOA ns1.ghostchain.internal. admin.ghostchain.internal. (
+        2026032301
+        3600
+        1800
+        604800
+        300
+)
+@     IN  NS  ns1.ghostchain.internal.
+1     IN  PTR hypervisor01.ghostchain.internal.
+205   IN  PTR ghostchain-devnet.ghostchain.internal.
+210   IN  PTR ghost-dns-slave.ghostchain.internal.

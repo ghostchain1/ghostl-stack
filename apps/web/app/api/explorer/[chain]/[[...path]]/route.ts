@@ -2,6 +2,92 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 type ChainKey = 'l1' | 'l2' | 'l3';
 
+// ── RPC fallback ─────────────────────────────────────────────────────────────
+const CHAIN_RPC: Record<ChainKey, string> = {
+  l1: process.env.L1_RPC_URL ?? 'http://localhost:18545',
+  l2: process.env.L2_RPC_URL ?? 'http://localhost:29545',
+  l3: process.env.L3_RPC_URL ?? 'http://localhost:39545',
+};
+const CHAIN_IDS: Record<ChainKey, string> = { l1: '14000101', l2: '901', l3: '903' };
+const CHAIN_NAMES: Record<ChainKey, string> = { l1: 'GhostChain L1', l2: 'GhostL2', l3: 'GhostL3' };
+
+async function jsonRpc(chain: ChainKey, method: string, params: unknown[] = []) {
+  const res = await fetch(CHAIN_RPC[chain], {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+    signal: AbortSignal.timeout(4_000),
+  });
+  const j = (await res.json()) as { result?: unknown };
+  return j.result ?? null;
+}
+
+type RpcBlock = { number: string; hash: string; timestamp: string; transactions: unknown[]; gasUsed: string; gasLimit: string; miner: string; size?: string };
+
+async function rpcBlocks(chain: ChainKey, limit: number): Promise<unknown> {
+  const latestHex = await jsonRpc(chain, 'eth_blockNumber') as string;
+  const latest = parseInt(latestHex, 16);
+  const nums = Array.from({ length: Math.min(limit, 50) }, (_, i) => Math.max(0, latest - i));
+  const raw = await Promise.all(nums.map(n => jsonRpc(chain, 'eth_getBlockByNumber', [`0x${n.toString(16)}`, false]).catch(() => null)));
+  const blocks = raw.filter(Boolean) as RpcBlock[];
+  return blocks.map(b => ({
+    number: parseInt(b.number, 16),
+    hash: b.hash,
+    timestamp: new Date(parseInt(b.timestamp, 16) * 1000).toISOString(),
+    txCount: Array.isArray(b.transactions) ? b.transactions.length : 0,
+    gasUsed: b.gasUsed,
+    gasLimit: b.gasLimit,
+    miner: b.miner,
+    chain: CHAIN_NAMES[chain],
+    chainId: CHAIN_IDS[chain],
+  }));
+}
+
+async function rpcSearch(chain: ChainKey, q: string): Promise<unknown> {
+  const trimmed = q.trim();
+  // Block number
+  if (/^\d+$/.test(trimmed)) {
+    const hex = `0x${parseInt(trimmed, 10).toString(16)}`;
+    const block = await jsonRpc(chain, 'eth_getBlockByNumber', [hex, false]).catch(() => null);
+    if (block) return { type: 'block', data: block };
+  }
+  // Tx hash
+  if (/^0x[0-9a-fA-F]{64}$/.test(trimmed)) {
+    const tx = await jsonRpc(chain, 'eth_getTransactionByHash', [trimmed]).catch(() => null);
+    if (tx) return { type: 'tx', data: tx };
+    const block = await jsonRpc(chain, 'eth_getBlockByHash', [trimmed, false]).catch(() => null);
+    if (block) return { type: 'block', data: block };
+  }
+  // Address
+  if (/^0x[0-9a-fA-F]{40}$/.test(trimmed)) {
+    const balance = await jsonRpc(chain, 'eth_getBalance', [trimmed, 'latest']).catch(() => null);
+    return { type: 'address', data: { address: trimmed, balance } };
+  }
+  return { type: 'unknown', data: null };
+}
+
+async function rpcTxs(chain: ChainKey, limit: number): Promise<unknown> {
+  const latestHex = await jsonRpc(chain, 'eth_blockNumber') as string;
+  const latest = parseInt(latestHex, 16);
+  const nums = Array.from({ length: Math.min(limit, 10) }, (_, i) => Math.max(0, latest - i));
+  const rawBlocks = await Promise.all(nums.map(n => jsonRpc(chain, 'eth_getBlockByNumber', [`0x${n.toString(16)}`, true]).catch(() => null)));
+  const txs: unknown[] = [];
+  for (const b of rawBlocks) {
+    if (!b || typeof b !== 'object') continue;
+    const block = b as { transactions?: unknown[]; number?: string; timestamp?: string };
+    const blockNum = block.number ? parseInt(block.number, 16) : 0;
+    const ts = block.timestamp ? new Date(parseInt(block.timestamp, 16) * 1000).toISOString() : '';
+    for (const tx of (block.transactions ?? [])) {
+      if (typeof tx === 'object' && tx !== null) {
+        txs.push({ ...(tx as object), blockNumber: blockNum, timestamp: ts, chain: CHAIN_NAMES[chain] });
+      }
+      if (txs.length >= limit) break;
+    }
+    if (txs.length >= limit) break;
+  }
+  return txs;
+}
+
 const corsHeaders = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET,POST,OPTIONS',
@@ -39,6 +125,8 @@ const resolveTargetPath = (segments: string[]) => {
       return `/api/v2/smart-contracts${suffix}`;
     case 'api':
       return `/${[head, ...tail].join('/')}`;
+    case 'search':
+      return `/api/v2/search${suffix}`;
     default:
       return '';
   }
@@ -68,11 +156,36 @@ async function proxy(request: NextRequest, params: { chain: string; path?: strin
   if (!chainBases[chain]) {
     return NextResponse.json({ error: 'invalid_chain' }, { status: 400, headers: corsHeaders });
   }
+
+  const segments = params.path ?? [];
+  const firstSegment = (segments[0] ?? '').toLowerCase();
   const base = resolveBase(chain);
+  const limit = Number(request.nextUrl.searchParams.get('limit') ?? request.nextUrl.searchParams.get('count') ?? '20');
+
+  // ── RPC fallback when GhostScan is not configured ────────────────────────
   if (!base) {
-    return NextResponse.json({ error: 'missing_base_url' }, { status: 500, headers: corsHeaders });
+    try {
+      if (firstSegment === 'blocks' || segments.length === 0) {
+        const data = await rpcBlocks(chain, Math.min(limit, 50));
+        return NextResponse.json({ blocks: data }, { headers: corsHeaders });
+      }
+      if (firstSegment === 'txs' || firstSegment === 'transactions') {
+        const data = await rpcTxs(chain, Math.min(limit, 50));
+        return NextResponse.json({ txs: data, transactions: data }, { headers: corsHeaders });
+      }
+      if (firstSegment === 'search') {
+        const q = request.nextUrl.searchParams.get('q') ?? '';
+        if (!q) return NextResponse.json({ error: 'q param required' }, { status: 400, headers: corsHeaders });
+        const data = await rpcSearch(chain, q);
+        return NextResponse.json(data, { headers: corsHeaders });
+      }
+      return NextResponse.json({ error: 'missing_base_url' }, { status: 500, headers: corsHeaders });
+    } catch (err) {
+      return NextResponse.json({ error: 'rpc_error', detail: String(err) }, { status: 502, headers: corsHeaders });
+    }
   }
-  const targetPath = resolveTargetPath(params.path ?? []);
+
+  const targetPath = resolveTargetPath(segments);
   if (!targetPath) {
     return NextResponse.json({ error: 'unsupported_endpoint' }, { status: 400, headers: corsHeaders });
   }
@@ -95,6 +208,24 @@ async function proxy(request: NextRequest, params: { chain: string; path?: strin
     });
     return buildResponse(upstream);
   } catch (error) {
+    // GhostScan unreachable — try RPC fallback for common endpoints
+    try {
+      if (firstSegment === 'blocks') {
+        const data = await rpcBlocks(chain, Math.min(limit, 50));
+        return NextResponse.json({ blocks: data }, { headers: corsHeaders });
+      }
+      if (firstSegment === 'txs' || firstSegment === 'transactions') {
+        const data = await rpcTxs(chain, Math.min(limit, 50));
+        return NextResponse.json({ txs: data, transactions: data }, { headers: corsHeaders });
+      }
+      if (firstSegment === 'search') {
+        const q = request.nextUrl.searchParams.get('q') ?? '';
+        if (q) {
+          const data = await rpcSearch(chain, q);
+          return NextResponse.json(data, { headers: corsHeaders });
+        }
+      }
+    } catch {/* ignore RPC fallback error */}
     return NextResponse.json({ error: 'upstream_unreachable', detail: String(error) }, { status: 502, headers: corsHeaders });
   }
 }

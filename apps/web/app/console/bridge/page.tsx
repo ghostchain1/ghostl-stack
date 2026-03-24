@@ -1,1 +1,1 @@
-export { default } from '../../bridge/page';
+export { default } from '../../(user)/bridge/page';

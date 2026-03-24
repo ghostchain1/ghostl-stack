@@ -17,10 +17,12 @@
     "@ghostl/auth": "file:../../packages/auth",
     "@ghostl/contract-schemas": "file:../../packages/contract-schemas",
     "@ghostl/ui": "file:../../packages/ui",
+    "ghost": "file:../../packages/ghost",
     "next": "16.1.6",
     "next-auth": "^5.0.0-beta.30",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "three": "^0.183.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {

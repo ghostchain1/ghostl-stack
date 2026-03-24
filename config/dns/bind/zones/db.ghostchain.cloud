@@ -1,0 +1,46 @@
+$ORIGIN ghostchain.cloud.
+$TTL 300
+@   IN  SOA ns1.ghostchain.cloud. admin.ghostchain.cloud. (
+        2026032301 ; serial
+        3600       ; refresh
+        1800       ; retry
+        604800     ; expire
+        300        ; minimum
+)
+
+@           IN  NS      ns1.ghostchain.cloud.
+ns1         IN  A       208.110.71.171
+
+@           IN  A       208.110.71.171
+www         IN  CNAME   ghostchain.cloud.
+investor    IN  A       208.110.71.171
+dev         IN  A       208.110.71.171
+apps        IN  A       208.110.71.171
+explorer    IN  A       208.110.71.171
+governance  IN  A       208.110.71.171
+nodes       IN  A       208.110.71.171
+validator   IN  CNAME   nodes.ghostchain.cloud.
+exchange    IN  A       208.110.71.171
+company     IN  A       208.110.71.171
+status      IN  A       208.110.71.171
+portal      IN  A       208.110.71.171
+admin       IN  CNAME   portal.ghostchain.cloud.
+wallet      IN  A       208.110.71.171
+bridge      IN  A       208.110.71.171
+docs        IN  A       208.110.71.171
+live        IN  A       208.110.71.171
+ai          IN  A       208.110.71.171
+rpc         IN  A       208.110.71.164
+api         IN  A       38.247.149.218
+
+rpc.testnet      IN  A  208.110.71.164
+explorer.testnet IN  A  208.110.71.171
+bridge.testnet   IN  A  208.110.71.171
+
+rpc.devnet       IN  A  208.110.71.164
+explorer.devnet  IN  A  208.110.71.171
+bridge.devnet    IN  A  208.110.71.171
+
+@           IN  CAA     0 issue "letsencrypt.org"
+@           IN  CAA     0 iodef "mailto:security@ghostchain.cloud"
+@           IN  TXT     "v=spf1 include:_spf.ghostchain.cloud ~all"

@@ -41,7 +41,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const session = await fetchServerSession();
   const initialSession = session.user ? { user: session.user, loading: false } : undefined;
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark">
       <body>
         <SessionProvider initial={initialSession}>
           <AppShellProvider>

@@ -1,0 +1,12 @@
+$ORIGIN 20.50.10.in-addr.arpa.
+$TTL 300
+@   IN  SOA ns1.ghostchain.internal. admin.ghostchain.internal. (
+        2026032301
+        3600
+        1800
+        604800
+        300
+)
+@     IN  NS  ns1.ghostchain.internal.
+10    IN  PTR ghostl2-mainnet.ghostchain.internal.
+186   IN  PTR ghostl2-testnet.ghostchain.internal.

@@ -1,0 +1,29 @@
+$ORIGIN ghostchain.internal.
+$TTL 300
+@   IN  SOA ns1.ghostchain.internal. admin.ghostchain.internal. (
+        2026032301 ; serial
+        3600       ; refresh
+        1800       ; retry
+        604800     ; expire
+        300        ; minimum
+)
+
+@                          IN  NS  ns1.ghostchain.internal.
+ns1                        IN  A   192.168.122.210
+
+hypervisor01               IN  A   192.168.122.1
+ghostchain-devnet          IN  A   192.168.122.205
+ghost-dns-slave            IN  A   192.168.122.210
+
+ghostchain-mainnet-l1      IN  A   10.50.10.152
+ghost-mainnet-validator    IN  A   10.50.10.124
+ghost-mainnet-archive-node IN  A   10.50.10.14
+
+ghostchain-testnet-l1      IN  A   10.50.10.103
+ghost-testnet-validator    IN  A   10.50.10.131
+
+ghostl2-mainnet            IN  A   10.50.20.10
+ghostl2-testnet            IN  A   10.50.20.186
+
+ghostl3-mainnet            IN  A   10.50.30.126
+ghostl3-testnet            IN  A   10.50.30.174
