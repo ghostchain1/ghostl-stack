@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "express": "^5.2.1",
-    "ws": "^8.18.0",
-    "better-sqlite3": "^11.10.0",
+    "ws": "^8.20.0",
+    "better-sqlite3": "^12.8.0",
     "cors": "^2.8.5"
   },
   "devDependencies": {
@@ -22,8 +22,8 @@
     "@types/ws": "^8.5.13",
     "@types/better-sqlite3": "^7.6.12",
     "@types/cors": "^2.8.17",
-    "@types/node": "^22.0.0",
+    "@types/node": "^25.5.0",
     "tsx": "^4.19.2",
-    "typescript": "5.9.3"
+    "typescript": "6.0.2"
   }
 }

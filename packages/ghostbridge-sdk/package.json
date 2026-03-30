@@ -13,7 +13,7 @@
   },
   "scripts": { "build": "tsc -p tsconfig.json", "clean": "rm -rf dist" },
   "dependencies": { "@ghostchain/sdk": "1.0.0" },
-  "devDependencies": { "@types/node": "^22.0.0", "typescript": "^5.6.0" },
+  "devDependencies": { "@types/node": "^25.5.0", "typescript": "^6.0.2" },
   "engines": { "node": ">=22.21.0 <23" },
   "keywords": ["ghostchain", "bridge", "l1", "l2", "l3", "cross-chain"],
   "license": "MIT"
