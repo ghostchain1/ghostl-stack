@@ -13,12 +13,12 @@
   },
   "dependencies": {
     "@ghostchain/api-client": "*",
-    "bullmq": "5.70.4",
-    "ioredis": "5.10.0"
+    "bullmq": "5.73.5",
+    "ioredis": "5.10.1"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",
-    "typescript": "5.9.3"
+    "typescript": "6.0.2"
   },
   "engines": {
     "node": ">=22.21.0 <23"
