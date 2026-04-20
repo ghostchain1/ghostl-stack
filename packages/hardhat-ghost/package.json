@@ -15,8 +15,8 @@
     "@ghostchain/ghost-contract-factory": "*"
   },
   "devDependencies": {
-    "typescript": "^5.4.5",
-    "hardhat": "^2.22.19",
+    "typescript": "^6.0.3",
+    "hardhat": "^3.4.0",
     "@ghostchain/sdk": "*",
     "@ghostchain/ghost-contract-factory": "*"
   },
