@@ -19,7 +19,7 @@
     "@ghostchain/sdk": "file:../ghost-sdk"
   },
   "devDependencies": {
-    "typescript": "5.9.3"
+    "typescript": "6.0.3"
   },
   "engines": {
     "node": ">=22.21.0 <23"
