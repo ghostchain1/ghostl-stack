@@ -19,21 +19,21 @@
     "@ghostchain/contract-schemas": "*",
     "@ghostchain/types": "*",
     "@ghostchain/ui": "*",
-    "next": "16.1.7",
-    "next-auth": "^5.0.0-beta.30",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "zod": "^4.3.6"
+    "next": "16.2.9",
+    "next-auth": "^5.0.0-beta.31",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@playwright/test": "1.58.2",
-    "@types/node": "^25.3.5",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.0.0",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.5.8",
+    "@playwright/test": "1.60.0",
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.15",
     "tailwindcss": "^3.4.17",
-    "typescript": "5.9.3"
+    "typescript": "6.0.3"
   },
   "engines": {
     "node": ">=22.21.0 <23"
